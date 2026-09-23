@@ -329,9 +329,9 @@
   .bj-status { color: #ddd0fa; flex: 1; }
   .bj-status b.win { color: #8ff0bd; } .bj-status b.lose { color: #ff9a9d; }
   .cards { display: inline-flex; gap: 4px; align-items: center; }
-  .card { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 46px; padding: 0 4px; border-radius: 6px; background: #fff; color: #1f0d3f; font-weight: 800; font-size: 15px; box-shadow: 0 2px 0 rgba(0, 0, 0, .4); }
-  .card.red { color: #d0263a; }
-  .card.back { background: repeating-linear-gradient(45deg, #ff7ac8 0 5px, #b77dff 5px 10px); border: 3px solid #fff; }
+  .pcard { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 46px; padding: 0 4px; border-radius: 6px; background: #fff; color: #1f0d3f; font-weight: 800; font-size: 15px; box-shadow: 0 2px 0 rgba(0, 0, 0, .4); }
+  .pcard.red { color: #d0263a; }
+  .pcard.back { background: repeating-linear-gradient(45deg, #ff7ac8 0 5px, #b77dff 5px 10px); border: 3px solid #fff; }
   .bj-val { margin-left: 6px; font-family: var(--display); font-size: 20px; }
   .art-stage { gap: 12px; }
   .art-pad { align-self: center; width: min(560px, 100%); aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 0 #1f0d3f; }
@@ -1652,8 +1652,8 @@ function bjLive(cl) {
     dealer: hide ? [bj.dealer[0], '??'] : bj.dealer, dealerValue: hide ? null : handValue(bj.dealer),
   };
 }
-const cardHtml = c => c === '??' ? '<span class="card back"></span>'
-  : `<span class="card ${/[♥♦]/.test(c) ? 'red' : ''}">${esc(c)}</span>`;
+const cardHtml = c => c === '??' ? '<span class="pcard back"></span>'
+  : `<span class="pcard ${/[♥♦]/.test(c) ? 'red' : ''}">${esc(c)}</span>`;
 function bjHtml(b, players, { host = false, me: mine = null } = {}) {
   if (!b) return '';
   const head = `<div class="secret-name" style="color:#4cd964">🃏 Gamble Slop!</div>`;
