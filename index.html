@@ -252,6 +252,8 @@
   .dlg { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(420px, 100%); display: flex; flex-direction: column; gap: 14px; }
   .dlg p { margin: 0; font-size: 16px; }
   .dlg .actions { justify-content: flex-end; }
+  .dlg.menu .actions { flex-direction: column; align-items: stretch; }
+  .dlg.menu .actions button { text-align: left; }
   .dlg .actions button { background: var(--panel2); }
   .dlg .actions button.primary { background: var(--accent); }
   .dlg .actions button.dangerbtn { background: var(--no); }
@@ -868,10 +870,10 @@ function celebrate(kind) {
 
 // ---------- Dialog + toast ----------
 // A dialog with several choices; resolves the chosen key, or null when dismissed.
-function choose(message, buttons) {
+function choose(message, buttons, cls = '') {
   return new Promise(resolve => {
     const d = $('#dialog');
-    d.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(message)}">
+    d.innerHTML = `<div class="dlg ${cls}" role="dialog" aria-modal="true" aria-label="${esc(message)}">
       <p>${esc(message)}</p>
       <div class="actions">${buttons.map(b => `<button class="${b.cls || ''}" data-dlg="${esc(b.key)}">${esc(b.label)}</button>`).join('')}</div></div>`;
     d.hidden = false;
@@ -1144,6 +1146,7 @@ function renderBoard() {
       <span class="round-name">${esc(info.name)}</span>
       <span class="spacer"></span>
       ${connectedChip()}
+      <button class="ghost" data-act="test-secret" title="Open a tile as a secret with the effect you choose">🧪 Test secret</button>
       ${soundButton()}
       <button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button>
       ${r > 0 ? `<button class="ghost" data-act="prev-round">← Prev round</button>` : ''}
@@ -1807,6 +1810,21 @@ function mountArt() {
   };
 }
 
+// Open a tile. A hidden secret (or one forced from the test menu) spins the wheel first.
+function openClue(c, i, forceEffect = null) {
+  const clue = playGame().rounds[play.round].categories[c].clues[i];
+  const dd = !forceEffect && !!clue.dd && S().dailyDoubles;
+  play.clue = { token: uid(), r: play.round, c, i, dd, stage: dd ? 'dd' : 'clue', revealed: false, wrong: [], queue: [], open: !dd };
+  ensureSecrets();
+  const key = `${play.round}-${c}-${i}`;
+  if (forceEffect || (!dd && S().secrets && play.secrets?.[key])) {
+    if (play.secrets) delete play.secrets[key];
+    Object.assign(play.clue, { stage: 'secret', open: false, secret: { effect: forceEffect || pickFrom(SECRETS).key, spinId: uid() } });
+    celebrate('secret');
+  }
+  savePlay(); render();
+}
+
 // ---------- Actions ----------
 function goFinal() {
   const f = playGame().final;
@@ -1923,18 +1941,20 @@ const actions = {
   },
 
   // Board
-  open(d) {
-    const clue = playGame().rounds[play.round].categories[+d.c].clues[+d.i];
-    const dd = !!clue.dd && S().dailyDoubles;
-    play.clue = { token: uid(), r: play.round, c: +d.c, i: +d.i, dd, stage: dd ? 'dd' : 'clue', revealed: false, wrong: [], queue: [], open: !dd };
-    ensureSecrets();
-    const key = `${play.round}-${d.c}-${d.i}`;
-    if (!dd && S().secrets && play.secrets?.[key]) {
-      delete play.secrets[key];
-      Object.assign(play.clue, { stage: 'secret', open: false, secret: { effect: pickFrom(SECRETS).key, spinId: uid() } });
-      celebrate('secret');
-    }
-    savePlay(); render();
+  open(d) { openClue(+d.c, +d.i); },
+  // Test menu: open a random tile on this board as a secret that lands on the chosen effect.
+  async 'test-secret'() {
+    const pick = await choose('Test a secret. A random tile on this board opens as a secret, and the wheel lands on what you pick.', [
+      ...SECRETS.map(x => ({ key: x.key, label: `${x.icon} ${x.label}` })),
+      { key: 'random', label: '🎲 Random' },
+      { key: 'cancel', label: 'Cancel' },
+    ], 'menu');
+    if (!pick || pick === 'cancel') return;
+    const info = roundInfo(playGame(), play.round), tiles = [];
+    info.open.forEach((col, c) => col.forEach((on, i) => { if (on) tiles.push([c, i]); }));
+    if (!tiles.length) { toast('No tiles left on this board to test with.'); return; }
+    const [c, i] = pickFrom(tiles);
+    openClue(c, i, pick === 'random' ? pickFrom(SECRETS).key : pick);
   },
   // Secrets
   'secret-go'() {
