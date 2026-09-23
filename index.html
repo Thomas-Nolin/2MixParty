@@ -358,6 +358,17 @@
   .img-thumb { width: 64px; height: 44px; object-fit: cover; border-radius: 6px; display: block; }
   .img-thumb.img-loading { padding: 0; font-size: 10px; display: flex; align-items: center; justify-content: center; }
   button.small { font-size: 12px; padding: .3em .6em; }
+  .calm .clue-stage, .calm .dd-title, .calm .answer, .calm .secret-title, .calm .secret-result.on, .calm .jrow.first { animation: none; }
+  .q-media { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.3fr); gap: 28px; align-items: center; text-align: left; width: 100%; }
+  .q-media .q-text { display: flex; flex-direction: column; gap: 12px; }
+  .q-media .clue-text { font-size: clamp(20px, 2.8vw, 42px); }
+  .q-media .clue-img { max-height: 62vh; max-width: 100%; width: auto; height: auto; justify-self: center; }
+  .clue-card:has(.q-media) { width: min(1500px, 100%); }
+  #overlay .q-media .clue-img { max-height: 56vh; } /* host: leave room for the judging buttons */
+  @media (max-width: 900px) {
+    .q-media { grid-template-columns: 1fr; text-align: center; }
+    .q-media .clue-img { max-height: 55vh; }
+  }
   .player.away { opacity: .5; }
   button.pname { background: none; border: 0; padding: 0; width: 100%; font: inherit; font-size: 13px; cursor: pointer; }
   button.pname:hover { color: #fff; text-decoration: underline; }
@@ -726,7 +737,7 @@ function buildLive() {
       wager: showQ && cl.ddPlayer ? cl.wager : null,
       q: showQ ? liveQuestion(cl, clue) : null, a: cl.revealed ? clue.a : null, revealed: !!cl.revealed,
       img: showQ && clue.img ? clue.img : null,
-      qOrig: cl.yoda && cl.revealed ? clue.q : null,
+      qOrig: (cl.mixed || cl.yoda) && cl.revealed ? clue.q : null,
       pingMore: !!(cl.ping && !cl.revealed && cl.ping.n < cl.ping.total),
       open: !!cl.open, queue: cl.queue, lockout: cl.wrong,
       effect: cl.effect || null, mult: cl.mult || 1, robot: !!cl.robot,
@@ -948,8 +959,18 @@ function showInvite() {
 }
 
 // ---------- Rendering ----------
+// Entrance animations (zoom, pop, fade) play when a new clue or stage appears, not on every
+// refresh (e.g. each "Ping" word or buzz); otherwise the screen keeps zooming in.
+let lastAnimKey = null;
 function render() {
   const app = $('#app');
+  const animKey = role === 'host'
+    ? [view.name, play?.clue?.token, play?.clue?.stage, play?.clue?.revealed, play?.clue?.queue?.[0], play?.final?.stage].join('|')
+    : [me.joined, live?.phase, live?.clue?.token, live?.clue?.stage, live?.clue?.revealed, live?.final?.stage].join('|');
+  const calm = animKey === lastAnimKey;
+  lastAnimKey = animKey;
+  app.classList.toggle('calm', calm);
+  $('#overlay').classList.toggle('calm', calm);
   if (role === 'player') app.innerHTML = renderPlayer();
   else if (view.name === 'home') app.innerHTML = renderHome();
   else if (view.name === 'edit') app.innerHTML = editGame() ? renderEditor() : renderHome();
@@ -1085,7 +1106,7 @@ function renderSettings(g) {
       <div class="settings-list">
         ${toggle('wrongCosts', 'Wrong answers lose points', "A wrong answer takes away the clue's value, or the Daily Double wager. Turn off for a friendlier game.")}
         ${toggle('dailyDoubles', 'Daily Doubles', 'When off, clues marked as Daily Doubles play like normal clues.')}
-        ${toggle('secrets', 'Hidden secrets', '1 or 2 tiles on each board secretly hide a secret. Finding one spins the wheel of chaos: Double trouble, Gamble Slop (blackjack), What is.. Art? (drawing), Are you a robot? (captcha buzzer), What is this Ping?? (one word at a time) or Wrote this, Yoda did!')}
+        ${toggle('secrets', 'Hidden secrets', '1 or 2 tiles on each board secretly hide a secret. Finding one spins the wheel of chaos: Double trouble, Gamble Slop (blackjack), What is.. Art? (drawing), Are you a robot? (captcha buzzer), What is this Ping?? (one word at a time) or Confusion??? (words mixed up)')}
         ${toggle('effects', 'Confetti & skulls', 'Confetti when someone scores and skulls raining down when a clue is missed, on every screen.')}
         <label class="setting" for="set-finalSeconds">
           <input id="set-finalSeconds" type="number" min="5" max="300" step="5" data-type="num" data-path="settings.finalSeconds" value="${st.finalSeconds}">
@@ -1279,7 +1300,7 @@ function renderFinal() {
   } else if (F.stage === 'clue') {
     body = `<div class="clue-card">
       <div class="clue-meta center">${esc(f.category)}</div>
-      <div class="clue-text">${esc(f.q)}</div>${f.img ? imgTag(f.img) : ''}
+      ${withImg(`<div class="clue-text">${esc(f.q)}</div>`, f.img)}
       ${timerBar(F.timerEnd, F.timerMs)}
       <div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${esc(f.a) || '<em>(none entered)</em>'}</div>
       <div class="actions">
@@ -1291,7 +1312,7 @@ function renderFinal() {
     const allJudged = players.every(p => p.id in F.results);
     body = `<div class="clue-card">
       <div class="clue-meta center">${esc(f.category)}</div>
-      <div class="clue-text" style="font-size:clamp(18px,2.6vw,34px)">${esc(f.q)}</div>${f.img ? imgTag(f.img, 'clue-img small') : ''}
+      ${withImg(`<div class="clue-text" style="font-size:clamp(18px,2.6vw,34px)">${esc(f.q)}</div>`, f.img)}
       <div class="answer">${esc(f.a) || '<em>(none entered)</em>'}</div>
       <div class="wtable">${players.length ? players.map(p => { const res = F.results[p.id]; return `<div class="wrow judge-row">
         <strong>${esc(p.name)}</strong><span class="muted">wagered ${fmt(F.wagers[p.id] || 0)}</span>
@@ -1390,8 +1411,7 @@ function renderPlayer() {
       : `<div class="clue-stage">
           ${effectPill(c.effect)}
           <div class="clue-meta"><span>${esc(c.cat)}</span><span>${c.dd ? `Daily Double · ${esc(c.ddName)} · ${fmt(c.wager * (c.mult || 1))}` : fmt(c.value * (c.mult || 1))}${c.mult > 1 ? ' · ×2' : ''}</span></div>
-          <div class="clue-text">${esc(c.q)}${c.pingMore ? '<span class="ping-dots"> …</span>' : ''}</div>
-          ${c.img ? imgTag(c.img) : ''}
+          ${withImg(`<div class="clue-text">${esc(c.q)}${c.pingMore ? '<span class="ping-dots"> …</span>' : ''}</div>`, c.img)}
           ${c.qOrig ? `<p class="label">Original: ${esc(c.qOrig)}</p>` : ''}
           ${c.revealed ? `<div class="answer">${esc(c.a || '')}</div>` : ''}
           <div class="queue-line">${!c.dd && c.queue.length ? `<b class="first">${avatarSvg(L.players.find(p => p.id === c.queue[0])?.av, 28)}${name(c.queue[0])}</b> buzzed in first${c.queue.length > 1 ? ` · then ${c.queue.slice(1).map(name).join(', ')}` : ''}` : ''}</div>
@@ -1424,7 +1444,7 @@ function playerFinal(L) {
   else if (F.stage === 'category' || F.stage === 'wager') inner = `<div class="dd-title" style="font-size:clamp(36px,8vw,90px)">Final 2MixParty!</div>
       <p class="label">The category is</p><div class="final-cat">${esc(F.category)}</div>
       ${F.stage === 'wager' ? playerWager(L, F) : ''}`;
-  else inner = `<div class="clue-meta center">${esc(F.category)}</div><div class="clue-text">${esc(F.q)}</div>${F.img ? imgTag(F.img) : ''}
+  else inner = `<div class="clue-meta center">${esc(F.category)}</div>${withImg(`<div class="clue-text">${esc(F.q)}</div>`, F.img)}
       ${F.stage === 'clue' ? timerBar(F.timerEnd, F.timerMs) : `<div class="answer">${esc(F.a || '')}</div>`}`;
   return `<div class="clue-stage">${inner}</div>`;
 }
@@ -1451,7 +1471,7 @@ const SECRETS = [
   { key: 'art', label: 'What is.. Art?', short: 'Art?', icon: '🎨', color: '#3fa9ff', desc: '30 seconds to draw the answer. The host picks the best drawing.' },
   { key: 'robot', label: 'Are you a robot?', short: 'Robot?', icon: '🤖', color: '#ffd23f', desc: 'Prove you’re human before your buzz counts.' },
   { key: 'ping', label: 'What is this Ping??', short: 'Ping??', icon: '🐌', color: '#ff7ac8', desc: 'The clue appears one word at a time, and stops when someone buzzes.' },
-  { key: 'yoda', label: 'Wrote this, Yoda did!', short: 'Yoda', icon: '👽', color: '#b77dff', desc: 'The clue, reworded like Yoda it is.' },
+  { key: 'confusion', label: 'Confusion???', short: 'Confusion', icon: '🌀', color: '#b77dff', desc: 'Some words in the clue are mixed up. Good luck.' },
 ];
 const secretOf = k => SECRETS.find(x => x.key === k);
 const effectPill = k => { const x = secretOf(k); return x ? `<div class="effect-pill" style="--pc:${x.color}">${x.icon} ${esc(x.label)}</div>` : ''; };
@@ -1496,63 +1516,35 @@ function secretHtml(sec) {
     <div class="secret-result ${landed ? 'on' : ''}">${landed && x ? `<div class="secret-name" style="color:${x.color}">${x.icon} ${esc(x.label)}</div><p class="label">${esc(x.desc)}</p>` : '<p class="label">Spinning the wheel of chaos…</p>'}</div>`;
 }
 
-// ---- Wrote this, Yoda did! (rule-based rewording: move what follows the verb, or a trailing
-// prepositional phrase, to the front; words inside quotes are never split)
-const YODA_AUX = new Set('is are was were am be been has have had can could will would shall should may might must do does did'.split(' '));
-const YODA_MODAL = new Set('can could will would shall should may might must do does did'.split(' '));
-const YODA_PREP = new Set('in on at of from with without by for to into onto over under near about after before during through like across around between among against inside'.split(' '));
-const YODA_LOWER = new Set('the a an this that these those he she it they we you his her its their our your my there'.split(' '));
-function yodaCore(w) {
-  const quoted = [];
-  let q = false;
-  for (const x of w) { const n = (x.match(/["“”]/g) || []).length; quoted.push(q && n === 0 ? true : q); if (n % 2) q = !q; }
-  const low = x => (YODA_LOWER.has(x.toLowerCase()) || YODA_PREP.has(x.toLowerCase())) ? x.toLowerCase() : x;
-  const pronounStart = YODA_LOWER.has(w[0].toLowerCase());
-  const k = w.findIndex((x, i) => i > 0 && !quoted[i] && (YODA_AUX.has(x.toLowerCase()) || (pronounStart && /^[a-z]{3,}ed$/.test(x))));
-  if (k > 0 && YODA_MODAL.has(w[k].toLowerCase()) && k < w.length - 2) {
-    const subj = w.slice(0, k); subj[0] = low(subj[0]);
-    return `${w.slice(k + 2).join(' ')}, ${subj.join(' ')} ${w[k]} ${w[k + 1]}`;
+// ---- Confusion??? (a few words of the clue swap places; always different from the original)
+function confuse(text) {
+  const w = String(text).trim().split(/\s+/).filter(Boolean);
+  if (w.length < 2) return w.join(' ');
+  const out = w.slice();
+  const swaps = Math.max(1, Math.round(w.length / 4));
+  for (let k = 0; k < swaps; k++) {
+    const i = Math.floor(Math.random() * out.length);
+    const j = (i + 1 + Math.floor(Math.random() * (out.length - 1))) % out.length;
+    [out[i], out[j]] = [out[j], out[i]];
   }
-  if (k > 0 && k < w.length - 1) {
-    const subj = w.slice(0, k); subj[0] = low(subj[0]);
-    return `${w.slice(k + 1).join(' ')}, ${subj.join(' ')} ${w[k]}`;
-  }
-  let j = -1, jOf = -1;
-  w.forEach((x, i) => { if (i > 0 && !quoted[i] && YODA_PREP.has(x.toLowerCase())) { if (x.toLowerCase() === 'of') { if (jOf < 0) jOf = i; } else j = i; } });
-  if (j < 0) j = jOf;
-  if (j > 0) { const head = w.slice(0, j); head[0] = low(head[0]); return `${w.slice(j).join(' ')}, ${head.join(' ').replace(/,+$/, '')}, it is`; }
-  return null;
-}
-function yodaify(text) {
-  let t = String(text).trim().replace(/\s+/g, ' ');
-  if (!t) return t;
-  const end = /[?!]$/.test(t) ? t.slice(-1) : '.';
-  t = t.replace(/[.?!]+$/, '')
-    .replace(/\b(it|that|he|she|what|there|here)['’]s\b/gi, '$1 is')
-    .replace(/\b(\w+)['’]re\b/gi, '$1 are').replace(/\bI['’]m\b/g, 'I am');
-  const cap = x => x.charAt(0).toUpperCase() + x.slice(1);
-  let out = null;
-  const ci = t.lastIndexOf(', ');
-  if (ci > 0) {  // try just the last clause first ("Known as X, it is Y" -> "Known as X, Y, it is")
-    const core = yodaCore(t.slice(ci + 2).split(' '));
-    if (core) out = t.slice(0, ci) + ', ' + core;
-  }
-  if (!out) { const core = yodaCore(t.split(' ')); out = core ? cap(core) : t; }
-  return `${out}${end} ${['Hmm.', 'Yes, hmmm.', 'Herh herh.', 'Mmm.'][t.length % 4]}`;
+  if (out.join(' ') === w.join(' ')) [out[0], out[out.length - 1]] = [out[out.length - 1], out[0]];
+  return out.join(' ');
 }
 function liveQuestion(cl, clue) {
-  if (cl.yoda) return cl.yoda;
+  if (cl.mixed || cl.yoda) return cl.mixed || cl.yoda;
   if (cl.ping && !cl.revealed) return clue.q.split(/\s+/).filter(Boolean).slice(0, cl.ping.n).join(' ');
   return clue.q;
 }
+// With a photo, the clue text sits beside it so the photo can use most of the screen height.
+const withImg = (textHtml, img) => img ? `<div class="q-media"><div class="q-text">${textHtml}</div>${imgTag(img)}</div>` : textHtml;
 function hostQuestionHtml(vc, clue) {
-  if (vc.yoda) return `<div class="clue-text">${esc(vc.yoda)}</div><p class="label">Original: ${esc(clue.q)}</p>${clue.img ? imgTag(clue.img) : ''}`;
+  if (vc.mixed || vc.yoda) return withImg(`<div class="clue-text">${esc(vc.mixed || vc.yoda)}</div><p class="label">Original: ${esc(clue.q)}</p>`, clue.img);
   if (vc.ping && !vc.revealed) {
     const words = clue.q.split(/\s+/).filter(Boolean);
-    return `<div class="clue-text">${words.map((x, k) => k < vc.ping.n ? esc(x) : `<span class="unseen">${esc(x)}</span>`).join(' ')}</div>
-      <p class="label">${vc.ping.n < vc.ping.total ? (vc.queue.length ? 'Paused: someone buzzed.' : 'Revealing one word at a time… Players only see the words so far.') : 'All words shown.'}</p>${clue.img ? imgTag(clue.img) : ''}`;
+    return withImg(`<div class="clue-text">${words.map((x, k) => k < vc.ping.n ? esc(x) : `<span class="unseen">${esc(x)}</span>`).join(' ')}</div>
+      <p class="label">${vc.ping.n < vc.ping.total ? (vc.queue.length ? 'Paused: someone buzzed.' : 'Revealing one word at a time… Players only see the words so far.') : 'All words shown.'}</p>`, clue.img);
   }
-  return `<div class="clue-text">${esc(clue.q)}</div>${clue.img ? imgTag(clue.img) : ''}`;
+  return withImg(`<div class="clue-text">${esc(clue.q)}</div>`, clue.img);
 }
 // Host ticker: reveal "Ping" words and end drawing time, even across a host reload.
 setInterval(() => {
@@ -1744,7 +1736,7 @@ function hostArtHtml(vc, C, clue) {
   if (vc.stage === 'art') {
     return `<div class="clue-card">${effectPill('art')}
       <div class="clue-meta"><span>${esc(C.name)}</span><span>${fmt(worth)}</span></div>
-      <div class="clue-text">${esc(clue.q)}</div>${clue.img ? imgTag(clue.img) : ''}
+      ${withImg(`<div class="clue-text">${esc(clue.q)}</div>`, clue.img)}
       ${timerBar(a.endsAt, a.ms)}
       <div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${esc(clue.a) || '<em>(none entered)</em>'}</div>
       <p class="label">Players are drawing the answer. ${Object.keys(a.drawings).length} drawing(s) in so far.</p>
@@ -2091,7 +2083,7 @@ const actions = {
     if (vc.effect === 'double') { vc.mult = 2; toClue(); }
     else if (vc.effect === 'robot') { vc.robot = true; toClue(); }
     else if (vc.effect === 'ping') { vc.ping = { n: 1, total: clue.q.split(/\s+/).filter(Boolean).length, last: Date.now() }; toClue(); }
-    else if (vc.effect === 'yoda') { vc.yoda = yodaify(clue.q); toClue(); }
+    else if (vc.effect === 'confusion' || vc.effect === 'yoda') { vc.mixed = confuse(clue.q); toClue(); }
     else if (vc.effect === 'art') { vc.stage = 'art'; vc.art = { ms: ART_MS, endsAt: Date.now() + ART_MS, drawings: {} }; }
     else if (vc.effect === 'blackjack') { vc.stage = 'bj'; vc.bj = { stage: 'wager', wagers: {}, hands: {}, dealer: [], deck: [] }; }
     savePlay(); render();
