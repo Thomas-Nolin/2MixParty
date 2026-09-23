@@ -2,13 +2,15 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Build custom trivia games and host them live: players join from their phones and buzz in.">
 <title>2MixParty!</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Anton&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet">
 <style>
   :root {
+    color-scheme: dark;
     --bg: #120a24;
     --panel: #1d1238;
     --panel2: #2b1c52;
@@ -24,22 +26,24 @@
     --serif: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
   }
   * { box-sizing: border-box; }
-  html, body { margin: 0; height: 100%; }
+  html, body { height: 100%; }
   body {
-    background: var(--bg);
-    color: var(--text);
+    margin: 0; background: var(--bg); color: var(--text);
     font: 15px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
   }
+  #app { min-height: 100%; }
   button {
     font: inherit; cursor: pointer; color: var(--text);
     background: var(--panel2); border: 1px solid var(--line);
     padding: .5em .9em; border-radius: 8px;
   }
   button:hover:not(:disabled) { border-color: rgba(255, 255, 255, .4); }
+  button:focus-visible, input:focus-visible, textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
   button:disabled { opacity: .4; cursor: default; }
   button.primary { background: var(--accent); color: #1f0d3f; border-color: transparent; font-weight: 700; }
   button.ghost { background: transparent; }
   button.danger { color: #ff9a9d; }
+  button.dangerbtn { background: var(--no); border-color: transparent; font-weight: 700; }
   button.icon { background: transparent; padding: .25em .55em; }
   input, textarea {
     font: inherit; color: var(--text); width: 100%;
@@ -57,21 +61,29 @@
     padding: 10px 16px; border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .25);
   }
   .logo { font-family: var(--display); letter-spacing: .04em; color: var(--accent); font-size: 30px; margin: 0; text-shadow: 2px 2px 0 #000; font-weight: 400; }
+  .logo.sm { font-size: 22px; }
+  .logo.big { font-size: clamp(44px, 12vw, 72px); text-align: center; }
   .title-input { max-width: 420px; font-weight: 700; font-size: 17px; }
   .round-name { font-family: var(--display); color: var(--accent); font-size: 22px; letter-spacing: .03em; text-shadow: 2px 2px 0 #000; }
+  .chip-live { font-size: 13px; padding: .25em .7em; border-radius: 999px; background: rgba(47, 191, 113, .18); color: #8ff0bd; border: 1px solid rgba(47, 191, 113, .4); white-space: nowrap; }
+  .chip-live.off { background: rgba(255, 255, 255, .06); color: var(--muted); border-color: var(--line); }
+  .wait { display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 6px; padding: 48px 16px; min-height: 50vh; }
 
   /* Home */
   .home { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
-  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 20px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 20px; align-items: center; }
   .resume {
     display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
     background: var(--board-dk); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;
   }
+  .howto { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px; font-size: 14px; }
+  .howto strong { color: var(--accent); }
+  .howto p { margin: 0 0 4px; }
   .game-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
   .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
   .card h3 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
   .meta { color: var(--muted); font-size: 13px; }
-  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
   .empty-state { text-align: center; padding: 40px 16px; color: var(--muted); }
 
   /* Editor */
@@ -98,11 +110,14 @@
   /* Setup / panels */
   .panel { max-width: 560px; margin: 32px auto; padding: 0 16px; }
   .panel h2 { font-family: var(--display); font-weight: 400; color: var(--accent); font-size: 30px; margin: 0 0 16px; letter-spacing: .03em; }
+  .panel h3 { font-size: 14px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); margin: 20px 0 8px; }
   .plist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
   .plist .prow { display: flex; gap: 6px; align-items: center; }
+  .remote-list { display: flex; flex-wrap: wrap; gap: 6px; }
+  .remote-list span { background: var(--board-dk); border: 1px solid var(--line); padding: .3em .8em; border-radius: 999px; }
 
   /* Board */
-  .board-view { height: 100vh; height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+  .board-view { height: 100%; min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto; }
   .board {
     display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr);
     gap: 6px; padding: 8px; background: #0a0515; min-height: 0; position: relative;
@@ -110,15 +125,16 @@
   .board .cat {
     background: var(--board); display: flex; align-items: center; justify-content: center; text-align: center;
     padding: 6px; font-family: var(--display); text-transform: uppercase; color: #fff;
-    font-size: clamp(12px, 1.9vw, 28px); line-height: 1.1; text-shadow: 2px 2px 0 #000; overflow: hidden;
+    font-size: clamp(11px, 1.9vw, 28px); line-height: 1.1; text-shadow: 2px 2px 0 #000; overflow: hidden;
     border-bottom: 4px solid #0a0515; overflow-wrap: anywhere;
   }
   .board .cell {
     background: var(--board); border: 0; border-radius: 0; padding: 0;
-    font-family: var(--display); color: var(--accent); font-size: clamp(18px, 4.4vw, 60px); text-shadow: 3px 3px 0 #000;
+    display: flex; align-items: center; justify-content: center;
+    font-family: var(--display); color: var(--accent); font-size: clamp(16px, 4.4vw, 60px); text-shadow: 3px 3px 0 #000;
     transition: filter .15s;
   }
-  .board .cell:hover:not(:disabled) { filter: brightness(1.3); border: 0; }
+  .board button.cell:hover:not(:disabled) { filter: brightness(1.3); border: 0; }
   .board .cell:disabled { opacity: 1; }
   .round-done {
     position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
@@ -126,34 +142,42 @@
   }
   .round-done p { font-family: var(--display); color: var(--accent); font-size: 30px; margin: 0 0 12px; }
   .scores { display: flex; gap: 8px; padding: 8px; overflow-x: auto; background: #0a0515; align-items: stretch; }
-  .player { flex: 1 1 0; min-width: 120px; background: var(--board-dk); border-radius: 6px; text-align: center; padding: 6px 8px; }
+  .player { flex: 1 1 0; min-width: 110px; background: var(--board-dk); border-radius: 6px; text-align: center; padding: 6px 8px; border: 2px solid transparent; }
+  .player.you { border-color: var(--accent); }
   .pname { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #ddd0fa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .pscore { font-family: var(--display); font-size: clamp(20px, 2.6vw, 34px); color: #fff; background: none; border: 0; padding: 0; line-height: 1.2; }
+  .pscore { font-family: var(--display); font-size: clamp(20px, 2.6vw, 34px); color: #fff; background: none; border: 0; padding: 0; line-height: 1.2; font-variant-numeric: tabular-nums; }
   .player.neg .pscore { color: #ff8f93; }
   .scores .undo { align-self: center; white-space: nowrap; }
 
-  /* Clue overlay */
+  /* Clue overlay (host) */
   #overlay {
     position: fixed; inset: 0; z-index: 10; background: var(--board);
-    display: flex; align-items: center; justify-content: center; padding: 16px;
+    display: flex; align-items: center; justify-content: center;
+    padding: calc(16px + env(safe-area-inset-top, 0px)) 16px calc(16px + env(safe-area-inset-bottom, 0px));
     animation: zoom .28s ease-out;
   }
-  #overlay[hidden] { display: none; }
   @keyframes zoom { from { transform: scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
   .clue-card { width: min(1150px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 22px; text-align: center; padding: 4px; }
   .clue-meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--display); text-transform: uppercase; color: var(--accent); font-size: clamp(16px, 2vw, 26px); letter-spacing: .03em; }
+  .clue-meta.center { justify-content: center; }
   .clue-text { font-family: var(--serif); text-transform: uppercase; font-size: clamp(22px, 4vw, 56px); line-height: 1.3; text-shadow: 3px 3px 0 #000; white-space: pre-wrap; overflow-wrap: anywhere; }
   .answer { font-family: var(--serif); color: var(--accent); font-size: clamp(18px, 2.8vw, 38px); text-shadow: 2px 2px 0 #000; white-space: pre-wrap; animation: fade .3s; }
+  .answer .tag { display: block; font-family: system-ui, sans-serif; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: #ddd0fa; text-shadow: none; margin-bottom: 4px; }
   @keyframes fade { from { opacity: 0; transform: translateY(6px); } }
   .reveal { align-self: center; font-size: 18px; background: rgba(0, 0, 0, .3); }
+  .buzzbar { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; font-size: 14px; }
+  .buzzbar .state { padding: .3em .8em; border-radius: 999px; background: rgba(0, 0, 0, .3); }
+  .buzzbar .state.open { background: rgba(47, 191, 113, .3); }
   .judge { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
-  .jrow { display: flex; align-items: center; gap: 6px; background: rgba(0, 0, 0, .3); padding: 6px 6px 6px 14px; border-radius: 10px; }
+  .jrow { display: flex; align-items: center; gap: 6px; background: rgba(0, 0, 0, .3); padding: 6px 6px 6px 12px; border-radius: 10px; border: 2px solid transparent; }
+  .jrow.first { border-color: var(--accent); background: rgba(0, 0, 0, .5); animation: pulse 1s ease-in-out 2; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 6px rgba(255, 168, 216, .35); } }
   .jrow.wrong { opacity: .45; }
   .jrow .who { font-weight: 700; margin-right: 4px; }
+  .jrow .pos { font-family: var(--display); color: var(--accent); min-width: 1.2em; }
   button.ok { background: var(--ok); border-color: transparent; color: #fff; }
   button.no { background: var(--no); border-color: transparent; color: #fff; }
-  button.ok.on { outline: 3px solid #fff; }
-  button.no.on { outline: 3px solid #fff; }
+  button.ok.on, button.no.on { outline: 3px solid #fff; }
   .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
   .actions button { background: rgba(0, 0, 0, .3); }
   .actions button.primary { background: var(--accent); }
@@ -168,7 +192,7 @@
   .label { margin: 0; color: #ddd0fa; }
 
   /* Final */
-  .final-view { min-height: 100vh; min-height: 100dvh; background: var(--board); display: flex; flex-direction: column; }
+  .final-view { min-height: 100vh; background: var(--board); display: flex; flex-direction: column; }
   .final-view .top { background: rgba(0, 0, 0, .3); }
   .final-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 16px; }
   .final-cat { font-family: var(--display); font-size: clamp(28px, 5vw, 64px); text-transform: uppercase; text-shadow: 3px 3px 0 #000; }
@@ -181,32 +205,121 @@
   .podium { display: flex; flex-direction: column; gap: 8px; width: min(560px, 100%); align-self: center; }
   .prow-r { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, .3); padding: 12px 16px; border-radius: 10px; font-size: 20px; }
   .prow-r.win { background: var(--accent); color: #1f0d3f; font-weight: 700; }
-  .prow-r .s { font-family: var(--display); font-size: 28px; }
+  .prow-r .s { font-family: var(--display); font-size: 28px; font-variant-numeric: tabular-nums; }
+
+  /* Player */
+  .pview { min-height: 100vh; display: grid; grid-template-rows: auto 1fr auto auto; background: #0a0515; }
+  .pview .top { background: var(--bg); }
+  .you-chip { font-weight: 700; background: var(--board-dk); padding: .3em .8em; border-radius: 999px; white-space: nowrap; font-variant-numeric: tabular-nums; }
+  .pmain { display: flex; flex-direction: column; min-height: 0; }
+  .pmain .board { flex: 1; min-height: 320px; }
+  .clue-stage { flex: 1; background: var(--board); display: flex; flex-direction: column; justify-content: center; gap: 18px; padding: 24px 16px; text-align: center; animation: zoom .28s ease-out; }
+  .clue-stage .clue-text { font-size: clamp(20px, 4vw, 52px); }
+  .queue-line { font-weight: 700; color: #fff; min-height: 1.5em; }
+  .queue-line b { color: var(--accent); }
+  .wager-form { display: flex; flex-direction: column; gap: 10px; align-items: center; width: min(420px, 100%); align-self: center; }
+  .wager-form .wager { max-width: 260px; }
+  .wager-form button { width: 100%; }
+  .locked { font-size: 12px; font-weight: 700; color: #8ff0bd; background: rgba(47, 191, 113, .18); border-radius: 999px; padding: .1em .6em; margin-left: 6px; white-space: nowrap; }
+  .player-join { max-width: 420px; margin: 0 auto; padding: 48px 16px; display: flex; flex-direction: column; gap: 12px; }
+  .player-join input { font-size: 20px; padding: .6em .8em; }
+  button.big { font-size: 20px; padding: .7em 1em; }
+  .buzz-wrap { padding: 12px 16px calc(12px + env(safe-area-inset-bottom, 0px)); background: var(--bg); display: flex; justify-content: center; border-top: 1px solid var(--line); }
+  .buzzer {
+    width: min(460px, 100%); height: clamp(72px, 14vh, 120px); border-radius: 999px; border: 0;
+    font-family: var(--display); font-size: clamp(24px, 6vw, 46px); letter-spacing: .06em;
+    background: #2a1d4d; color: #a797cc; transition: transform .06s, box-shadow .06s;
+  }
+  .buzzer:disabled { opacity: 1; }
+  .buzzer.live { background: radial-gradient(circle at 50% 30%, #ff6a6f, #c4161c 70%); color: #fff; box-shadow: 0 7px 0 #6d0a0e, 0 0 36px rgba(255, 60, 60, .45); cursor: pointer; }
+  .buzzer.live:active { transform: translateY(5px); box-shadow: 0 2px 0 #6d0a0e; }
+  .buzzer.up { background: var(--accent); color: #1f0d3f; animation: pulse 1s ease-in-out infinite; }
+  .buzzer.queued { background: #7b5cf0; color: #fff; }
+  .buzzer.out { background: #3a1d24; color: #ff9a9d; }
+
+  /* Dialog + toast */
+  #dialog { position: fixed; inset: 0; z-index: 30; background: rgba(8, 3, 20, .75); display: flex; align-items: center; justify-content: center; padding: 16px; }
+  .dlg { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px; width: min(420px, 100%); display: flex; flex-direction: column; gap: 14px; }
+  .dlg p { margin: 0; font-size: 16px; }
+  .dlg .actions { justify-content: flex-end; }
+  .dlg .actions button { background: var(--panel2); }
+  .dlg .actions button.primary { background: var(--accent); }
+  .dlg .actions button.dangerbtn { background: var(--no); }
+  #toast { position: fixed; left: 50%; bottom: calc(20px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); z-index: 40; background: #0a0515; border: 1px solid var(--accent); border-radius: 10px; padding: 10px 16px; max-width: calc(100% - 32px); }
 
   @media (max-width: 600px) {
     .board { gap: 3px; padding: 4px; }
     .board .cat { border-bottom-width: 2px; padding: 3px; }
     .wrow { grid-template-columns: 1fr 110px; }
     .wrow .sc { display: none; }
+    .top .hide-sm { display: none; }
   }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+  }
+</style>
+<style>
+  .invite { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; width: min(460px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
+  .invite h2 { margin: 0; font-family: var(--display); font-weight: 400; color: var(--accent); font-size: 26px; letter-spacing: .03em; }
+  .room-code { font-family: var(--display); font-size: clamp(44px, 12vw, 72px); letter-spacing: .12em; color: #fff; line-height: 1; }
+  .qr { background: #fff; padding: 12px; border-radius: 12px; line-height: 0; }
+  .qr img, .qr canvas { display: block; width: 200px; height: 200px; }
+  .join-link { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: rgba(0, 0, 0, .3); padding: .5em .8em; border-radius: 8px; overflow-wrap: anywhere; user-select: all; max-width: 100%; }
+  .code-input { font-family: var(--display); font-size: 28px; letter-spacing: .2em; text-transform: uppercase; text-align: center; }
+  .conn-banner { background: #3a1d24; color: #ffc1c3; text-align: center; padding: 8px 16px; font-weight: 600; }
+  .conn-banner.ok { background: rgba(47, 191, 113, .18); color: #8ff0bd; }
+  .linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: 0; }
+  button.chip-live { cursor: pointer; font: inherit; font-size: 13px; }
 </style>
 </head>
 <body>
 <div id="app"></div>
 <div id="overlay" hidden></div>
+<div id="dialog" hidden></div>
+<div id="toast" hidden></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
 
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const uid = () => Math.random().toString(36).slice(2, 10);
-const fmt = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString();
-const LS_GAMES = 'jeoparty.games', LS_PLAY = 'jeoparty.play';
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.abs(+n || 0).toLocaleString();
+const clone = o => JSON.parse(JSON.stringify(o));
+const str = (v, max) => typeof v === 'string' ? v.slice(0, max) : '';
 
-function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
-function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
-const saveGames = () => store(LS_GAMES, games);
-const savePlay = () => store(LS_PLAY, play);
+function lsGet(k, d) { try { const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); } catch { return d; } }
+function lsSet(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+
+// ---------- Connection state ----------
+// The host's browser is the game server. Players connect to it directly (WebRTC) using a room
+// code; the free PeerJS broker only introduces the two browsers to each other.
+const PEER_PREFIX = '2mixparty-v1-';
+const CODE_CHARS = 'ABCDEFGHJKMNPQRSTUVWXYZ23456789';
+const newCode = () => Array.from({ length: 4 }, () => CODE_CHARS[Math.floor(Math.random() * CODE_CHARS.length)]).join('');
+const params = new URLSearchParams(location.search);
+const role = params.has('join') ? 'player' : 'host';
+
+let peer = null;
+let peerState = 'off';     // host: 'connecting' | 'online' | 'error'
+const conns = new Map();   // host: connectionId -> { conn, pid, name, role }
+let peersList = [];        // host: players connected on their own devices [{pid,name}]
+let watchers = 0;          // host: "just watch" screens
+let live = null;           // player: the host's latest state
+let pconn = null, pstate = 'idle', pConnecting = false, retryTimer = null; // player connection
+let beepTimer = null;
+let needsRender = false;   // a render skipped so it wouldn't steal focus from a field being typed in
+
+const me = {
+  pid: lsGet('jeoparty.pid', null) || uid(),
+  name: lsGet('jeoparty.name', ''),
+  watch: lsGet('jeoparty.watch', false),
+  code: (params.get('join') || lsGet('jeoparty.lastCode', '') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4),
+  joined: false, buzzToken: null, err: '',
+  fwDraft: '', fwErr: '', fwSent: null,
+};
+lsSet('jeoparty.pid', me.pid);
 
 // ---------- Model ----------
 const blankClue = () => ({ q: '', a: '', dd: false });
@@ -216,14 +329,13 @@ function newRound(name, mult = 1) {
   return { name, values, categories: Array.from({ length: 5 }, () => newCat(values.length)) };
 }
 function blankGame() {
-  return { id: uid(), title: 'Untitled game', rounds: [newRound('2MixParty!')], final: { enabled: true, category: '', q: '', a: '' } };
+  return { id: uid(), created: Date.now(), title: 'Untitled game', rounds: [newRound('2MixParty!')], final: { enabled: true, category: '', q: '', a: '' } };
 }
-function normalize(g) {
+function normalize(g, id) {
   g = g && typeof g === 'object' ? g : {};
-  g.id = uid();
-  g.title = String(g.title ?? 'Imported game');
-  if (!Array.isArray(g.rounds) || !g.rounds.length) g.rounds = [newRound('2MixParty!')];
-  g.rounds = g.rounds.map((R, ri) => {
+  const out = { id: id || uid(), created: +g.created || Date.now(), title: String(g.title ?? 'Imported game') };
+  const rounds = Array.isArray(g.rounds) && g.rounds.length ? g.rounds : [newRound('2MixParty!')];
+  out.rounds = rounds.map((R, ri) => {
     const values = Array.isArray(R?.values) && R.values.length ? R.values.map(v => parseInt(v) || 0) : [200, 400, 600, 800, 1000];
     const categories = (Array.isArray(R?.categories) ? R.categories : []).map(C => {
       const clues = Array.isArray(C?.clues) ? C.clues.slice(0, values.length) : [];
@@ -233,14 +345,13 @@ function normalize(g) {
     return { name: String(R?.name ?? `Round ${ri + 1}`), values, categories };
   });
   const f = g.final || {};
-  g.final = { enabled: f.enabled ?? true, category: String(f.category ?? ''), q: String(f.q ?? ''), a: String(f.a ?? '') };
-  return g;
+  out.final = { enabled: f.enabled ?? true, category: String(f.category ?? ''), q: String(f.q ?? ''), a: String(f.a ?? '') };
+  return out;
 }
-
 function sampleGame() {
   const cats = [
     ['Science', [
-      ['Known as the Red Planet, it\'s fourth from the Sun', 'What is Mars?'],
+      ["Known as the Red Planet, it's fourth from the Sun", 'What is Mars?'],
       ['H₂O is the chemical formula for this', 'What is water?'],
       ['This force keeps your feet on the ground', 'What is gravity?'],
       ['Often called the powerhouse of the cell', 'What is the mitochondria?'],
@@ -248,7 +359,7 @@ function sampleGame() {
     ['World Geography', [
       ['The longest river in Africa', 'What is the Nile?'],
       ['Machu Picchu sits high in the Andes of this country', 'What is Peru?'],
-      ['Not Sydney, this city is Australia\'s capital', 'What is Canberra?'],
+      ["Not Sydney, this city is Australia's capital", 'What is Canberra?'],
       ['The smallest country in the world by area', 'What is Vatican City?', true],
       ['This narrow strait separates Spain from Morocco', 'What is the Strait of Gibraltar?']]],
     ['Movies', [
@@ -261,7 +372,7 @@ function sampleGame() {
       ['The main ingredient in guacamole', 'What is avocado?'],
       ['True Champagne must come from this country', 'What is France?'],
       ['Japanese dish of thinly sliced raw fish served without rice', 'What is sashimi?'],
-      ['Harvested from crocus flowers, it\'s the priciest spice by weight', 'What is saffron?'],
+      ["Harvested from crocus flowers, it's the priciest spice by weight", 'What is saffron?'],
       ['This hearty Hungarian stew is seasoned with plenty of paprika', 'What is goulash?']]],
     ['Wordplay', [
       ['A word that reads the same forwards and backwards, like "level"', 'What is a palindrome?'],
@@ -271,24 +382,21 @@ function sampleGame() {
       ['"The quick brown fox jumps over the lazy dog" is one of these', 'What is a pangram?']]],
   ];
   return {
-    id: uid(), title: 'Sample Game',
+    id: uid(), created: 1, title: 'Sample Game',
     rounds: [{ name: '2MixParty!', values: [200, 400, 600, 800, 1000],
       categories: cats.map(([name, cl]) => ({ name, clues: cl.map(([q, a, dd]) => ({ q, a, dd: !!dd })) })) }],
-    final: { enabled: true, category: 'Famous Landmarks', q: 'This iron tower was built as the entrance arch to the 1889 World\'s Fair', a: 'What is the Eiffel Tower?' },
+    final: { enabled: true, category: 'Famous Landmarks', q: "This iron tower was built as the entrance arch to the 1889 World's Fair", a: 'What is the Eiffel Tower?' },
   };
 }
 
-let games = load(LS_GAMES, null);
-if (!Array.isArray(games)) { games = [sampleGame()]; saveGames(); }
-let play = load(LS_PLAY, null);
-if (play && !games.some(g => g.id === play.gameId)) { play = null; savePlay(); }
+let games = [];
+let play = null;
 let view = { name: 'home' };
-let timer = null; // { start, ms, handle }
 
 const gameById = id => games.find(g => g.id === id);
 const editGame = () => gameById(view.gameId);
-const playGame = () => gameById(play.gameId);
-const player = id => play.players.find(p => p.id === id);
+const playGame = () => play && gameById(play.gameId);
+const player = id => play?.players.find(p => p.id === id);
 const filled = clue => clue.q.trim() !== '';
 
 function setPath(obj, path, val) {
@@ -297,40 +405,199 @@ function setPath(obj, path, val) {
   for (let i = 0; i < k.length - 1; i++) o = o[k[i]];
   o[k[k.length - 1]] = val;
 }
+
+// ---------- Persistence (this browser) ----------
+const saveGames = () => lsSet('jeoparty.games', games);
+const touch = () => saveGames();
+const savePlay = () => lsSet('jeoparty.play', play);
+
+// ---------- Live state for players ----------
+let liveJson = '';
+function publishLive() {
+  if (role !== 'host') return;
+  const s = JSON.stringify(buildLive());
+  if (s === liveJson) return;
+  liveJson = s;
+  for (const rec of conns.values()) if (rec.role) send(rec, { type: 'state', state: JSON.parse(s) });
+}
+function send(rec, msg) { try { if (rec.conn.open) rec.conn.send(msg); } catch {} }
+
+// What players are allowed to see: no correct responses until revealed, no unrevealed clue text.
+function buildLive() {
+  const g = playGame();
+  if (!g) return { phase: 'idle' };
+  const base = { title: g.title, players: play.players.map(({ id, name, score }) => ({ id, name, score })) };
+  if (play.final) {
+    const f = g.final, F = play.final;
+    return { ...base, phase: 'final', final: {
+      stage: F.stage, category: f.category,
+      q: ['clue', 'reveal'].includes(F.stage) ? f.q : null,
+      a: F.stage === 'reveal' ? f.a : null,
+      timerEnd: F.stage === 'clue' ? (F.timerEnd || null) : null,
+      token: F.stage === 'wager' ? (F.token || null) : null,
+      locked: F.stage === 'wager' ? Object.keys(F.submitted || {}) : [],
+    } };
+  }
+  const r = play.round, R = g.rounds[r];
+  const out = { ...base, phase: 'board', round: roundInfo(g, r) };
+  const cl = play.clue;
+  if (cl) {
+    const clue = R.categories[cl.c].clues[cl.i];
+    const showQ = cl.stage === 'clue';
+    out.clue = {
+      token: cl.token, stage: cl.stage, cat: R.categories[cl.c].name, value: R.values[cl.i],
+      dd: !!clue.dd, ddName: cl.ddPlayer ? (player(cl.ddPlayer)?.name || '') : '',
+      wager: showQ && cl.ddPlayer ? cl.wager : null,
+      q: showQ ? clue.q : null, a: cl.revealed ? clue.a : null, revealed: !!cl.revealed,
+      open: !!cl.open, queue: cl.queue, lockout: cl.wrong,
+    };
+  }
+  return out;
+}
+function roundInfo(g, r) {
+  const R = g.rounds[r];
+  return {
+    name: R.name, cats: R.categories.map(C => C.name), values: R.values,
+    open: R.categories.map((C, c) => C.clues.map((cl, i) => filled(cl) && !play.used[`${r}-${c}-${i}`] ? 1 : 0)),
+  };
+}
+
 function adjust(pid, delta) {
   const p = player(pid);
   if (!p || !delta) return;
   p.score += delta;
   play.log.push({ pid, delta });
+  if (play.log.length > 200) play.log.shift();
   savePlay();
 }
 function roundComplete() {
-  const R = playGame().rounds[play.round];
-  return R.categories.every((C, c) => C.clues.every((cl, i) => !filled(cl) || play.used[`${play.round}-${c}-${i}`]));
+  const info = roundInfo(playGame(), play.round);
+  return info.cats.length > 0 && info.open.every(col => col.every(v => !v));
 }
-function newPlay(gameId, names) {
-  return { gameId, players: names.map(name => ({ id: uid(), name, score: 0 })), round: 0, used: {}, log: [], final: null };
-}
-function stopTimer() { if (timer) clearTimeout(timer.handle); timer = null; }
-function beep() {
-  try {
-    const a = new (window.AudioContext || window.webkitAudioContext)();
-    const o = a.createOscillator(), g = a.createGain();
-    o.frequency.value = 523; o.connect(g); g.connect(a.destination);
-    g.gain.setValueAtTime(.25, a.currentTime); g.gain.exponentialRampToValueAtTime(.001, a.currentTime + 1.2);
-    o.start(); o.stop(a.currentTime + 1.2);
-  } catch {}
+function newPlay(gameId, players) {
+  return { gameId, players, round: 0, used: {}, log: [], clue: null, final: null };
 }
 
-// ---------- Views ----------
+// ---------- Sound ----------
+// One shared AudioContext, unlocked by the viewer's first click (browsers block sound before that).
+let audioCtx = null;
+let muted = lsGet('jeoparty.muted', false);
+function audio() {
+  try {
+    audioCtx ||= new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    return audioCtx;
+  } catch { return null; }
+}
+function tone(freq, dur, { type = 'sine', gain = .25, when = 0 } = {}) {
+  const a = !muted && audio();
+  if (!a) return;
+  const t = a.currentTime + when;
+  const o = a.createOscillator(), g = a.createGain();
+  o.type = type;
+  o.frequency.setValueAtTime(freq, t);
+  o.connect(g); g.connect(a.destination);
+  g.gain.setValueAtTime(gain, t);
+  g.gain.exponentialRampToValueAtTime(.001, t + dur);
+  o.start(t); o.stop(t + dur + .02);
+}
+function beep(freq = 523, dur = 1.2) { tone(freq, dur); }
+// Game-show buzzer: a bright two-note "ding-ding" for the first buzz, a single softer blip for anyone after.
+function buzzSound(first = true) {
+  if (first) {
+    tone(1046, .35, { type: 'triangle', gain: .3 });
+    tone(1318, .5, { type: 'triangle', gain: .3, when: .12 });
+    tone(523, .3, { type: 'square', gain: .05 });
+  } else {
+    tone(784, .25, { type: 'triangle', gain: .18 });
+  }
+}
+function soundButton() {
+  return `<button class="ghost" data-act="toggle-sound" title="${muted ? 'Turn sound on' : 'Turn sound off'}" aria-pressed="${!muted}">${muted ? 'Sound off' : 'Sound on'}</button>`;
+}
+
+// ---------- Dialog + toast ----------
+function ask(message, { ok = 'OK', cancel = 'Cancel', input = null, danger = false } = {}) {
+  return new Promise(resolve => {
+    const d = $('#dialog');
+    d.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(message)}">
+      <p>${esc(message)}</p>
+      ${input !== null ? `<input id="dlg-input" value="${esc(input)}">` : ''}
+      <div class="actions">${cancel ? `<button data-dlg="0">${esc(cancel)}</button>` : ''}<button class="${danger ? 'dangerbtn' : 'primary'}" data-dlg="1">${esc(ok)}</button></div></div>`;
+    d.hidden = false;
+    const inp = d.querySelector('input');
+    (inp || d.querySelector('[data-dlg="1"]')).focus();
+    if (inp) inp.select();
+    const done = yes => { d.hidden = true; d.innerHTML = ''; d.onclick = d.onkeydown = null; resolve(inp ? (yes ? inp.value : null) : yes); };
+    d.onclick = e => { const b = e.target.closest('[data-dlg]'); if (b) done(b.dataset.dlg === '1'); else if (e.target === d) done(false); };
+    d.onkeydown = e => { if (e.key === 'Enter') { e.preventDefault(); done(true); } else if (e.key === 'Escape') done(false); e.stopPropagation(); };
+  });
+}
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg; t.hidden = false;
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.hidden = true; }, 3500);
+}
+
+const roomCode = () => lsGet('jeoparty.room', null);
+const hosted = () => /^https?:$/.test(location.protocol);
+const joinLink = () => `${location.origin}${location.pathname}?join=${roomCode()}`;
+
+function showInvite() {
+  const d = $('#dialog');
+  const code = roomCode();
+  d.innerHTML = `<div class="invite" role="dialog" aria-modal="true" aria-label="Invite players">
+    <h2>Join the game</h2>
+    ${peerState === 'online' ? `
+      ${hosted() ? `<div class="qr" id="qr"></div><p class="label">Scan with a phone camera, or open this link:</p>
+        <div class="join-link" id="join-link">${esc(joinLink())}</div>
+        <button data-dlg="copy">Copy link</button>
+        <p class="label">Or open the game page, choose <strong>Join a game</strong>, and enter the code:</p>` : `<p class="label">Players open the game's web address, choose <strong>Join a game</strong>, and enter:</p>`}
+      <div class="room-code">${esc(code)}</div>`
+    : `<p class="label">${peerState === 'connecting' ? 'Opening your room… try again in a moment.' : "Online play isn't reachable right now. Check your internet connection; the game still works on this screen."}</p>`}
+    <div class="actions"><button class="primary" data-dlg="1">Done</button></div></div>`;
+  d.hidden = false;
+  if (peerState === 'online' && hosted() && window.QRCode) {
+    try { new QRCode($('#qr'), { text: joinLink(), width: 200, height: 200, colorDark: '#120a24', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch {}
+  }
+  d.querySelector('[data-dlg="1"]').focus();
+  const close = () => { d.hidden = true; d.innerHTML = ''; d.onclick = d.onkeydown = null; };
+  d.onclick = async e => {
+    const b = e.target.closest('[data-dlg]');
+    if (e.target === d || b?.dataset.dlg === '1') return close();
+    if (b?.dataset.dlg === 'copy') {
+      try { await navigator.clipboard.writeText(joinLink()); b.textContent = 'Copied!'; }
+      catch { const r = document.createRange(); r.selectNodeContents($('#join-link')); getSelection().removeAllRanges(); getSelection().addRange(r); b.textContent = 'Press Ctrl+C to copy'; }
+    }
+  };
+  d.onkeydown = e => { if (e.key === 'Escape' || e.key === 'Enter') close(); e.stopPropagation(); };
+}
+
+// ---------- Rendering ----------
 function render() {
   const app = $('#app');
-  if (view.name === 'home') app.innerHTML = renderHome();
-  else if (view.name === 'edit') app.innerHTML = renderEditor();
+  if (role === 'player') app.innerHTML = renderPlayer();
+  else if (view.name === 'home') app.innerHTML = renderHome();
+  else if (view.name === 'edit') app.innerHTML = editGame() ? renderEditor() : renderHome();
   else if (view.name === 'setup') app.innerHTML = renderSetup();
-  else if (view.name === 'board') app.innerHTML = renderBoard();
-  else if (view.name === 'final') app.innerHTML = renderFinal();
+  else if (view.name === 'board') app.innerHTML = playGame() ? renderBoard() : renderHome();
+  else if (view.name === 'final') app.innerHTML = playGame() && play.final ? renderFinal() : renderHome();
   renderOverlay();
+  publishLive();
+}
+// Re-render now, or later if the viewer is typing (a render would steal their focus).
+function refresh() {
+  if (role === 'host' && view.name === 'edit') { publishLive(); return; }
+  if (typingInApp()) { needsRender = true; publishLive(); } else render();
+}
+const typingInApp = () => { const a = document.activeElement; return !!(a && a.matches?.('input, textarea') && $('#app').contains(a)); };
+
+function connectedChip() {
+  if (peerState === 'error') return `<button class="chip-live off" data-act="invite" title="Players can't join right now">Online play offline</button>`;
+  if (peerState !== 'online') return `<span class="chip-live off">Opening room…</span>`;
+  const n = peersList.length;
+  return `<button class="chip-live" data-act="invite" title="Show how players join">Room ${esc(roomCode())} · ${n} player${n === 1 ? '' : 's'}${watchers ? ` · ${watchers} watching` : ''}</button>`;
 }
 
 function gameStats(g) {
@@ -340,15 +607,21 @@ function gameStats(g) {
 }
 
 function renderHome() {
-  const inProgress = play && playGame();
+  const inProgress = playGame();
   return `
-  <header class="top"><h1 class="logo">2MixParty!</h1><span class="spacer"></span><button class="ghost" data-act="fullscreen">⛶ Fullscreen</button></header>
+  <header class="top"><h1 class="logo">2MixParty!</h1><span class="spacer"></span>${connectedChip()}
+    <button class="ghost" data-act="invite">Invite players</button>
+    <button class="ghost" data-act="fullscreen">⛶ Fullscreen</button></header>
   <main class="home">
-    ${inProgress ? `<div class="resume"><div><strong>Game in progress:</strong> ${esc(playGame().title)}<div class="meta">${play.players.map(p => `${esc(p.name)} ${fmt(p.score)}`).join(' · ')}</div></div>
-      <span class="spacer"></span><button class="ghost" data-act="abandon">Abandon</button><button class="primary" data-act="resume">Resume ▶</button></div>` : ''}
+    ${inProgress ? `<div class="resume"><div><strong>Game in progress:</strong> ${esc(inProgress.title)}<div class="meta">${play.players.map(p => `${esc(p.name)} ${fmt(p.score)}`).join(' · ')}</div></div>
+      <span class="spacer"></span><button class="ghost" data-act="abandon">End game</button><button class="primary" data-act="resume">Resume ▶</button></div>` : ''}
+    <div class="howto"><p><strong>You're the host.</strong> This screen shows the correct responses and controls the board, so keep it to yourself.</p>
+      <p class="muted">Press <strong>Invite players</strong> for a QR code, link and room code. Players join on their phones with no account and get a buzzer. Put a second device on the TV and join it with "Just watch" to show the board to the room. Keep this tab open during the game: it runs the game.</p></div>
     <div class="toolbar">
       <button class="primary" data-act="new">+ New game</button>
       <button data-act="import">Import JSON</button>
+      <span class="spacer"></span>
+      <button class="linkish" data-act="to-player">Joining someone else's game?</button>
     </div>
     ${games.length ? `<div class="game-list">${games.map(g => `
       <div class="card">
@@ -363,6 +636,7 @@ function renderHome() {
         </div>
       </div>`).join('')}</div>`
     : `<div class="empty-state">No games yet. Create one or import a JSON file.</div>`}
+    <p class="hint" style="margin-top:24px">Games are saved in this browser. Use Export to back them up or move them to another computer.</p>
   </main>`;
 }
 
@@ -371,7 +645,7 @@ function renderEditor() {
   const rounds = g.rounds.map((R, r) => `
     <section class="section">
       <div class="section-head">
-        <input data-path="rounds.${r}.name" value="${esc(R.name)}" placeholder="Round name" aria-label="Round name">
+        <input id="rn-${r}" data-path="rounds.${r}.name" value="${esc(R.name)}" placeholder="Round name" aria-label="Round name">
         <button data-act="add-cat" data-r="${r}">+ Category</button>
         <button data-act="add-row" data-r="${r}">+ Row</button>
         <span class="spacer"></span>
@@ -379,17 +653,17 @@ function renderEditor() {
       </div>
       <div class="grid-wrap"><table class="ed-grid">
         <thead><tr><th class="valcol"></th>${R.categories.map((C, c) => `
-          <th><div class="cat-h"><input data-path="rounds.${r}.categories.${c}.name" value="${esc(C.name)}" placeholder="Category ${c + 1}">
+          <th><div class="cat-h"><input id="cn-${r}-${c}" data-path="rounds.${r}.categories.${c}.name" value="${esc(C.name)}" placeholder="Category ${c + 1}" aria-label="Category ${c + 1} name">
           <button class="icon" title="Remove category" data-act="del-cat" data-r="${r}" data-c="${c}">✕</button></div></th>`).join('')}
         </tr></thead>
         <tbody>${R.values.map((v, i) => `<tr>
-          <td class="valcol"><div class="valcell"><input type="number" step="100" data-type="num" data-path="rounds.${r}.values.${i}" value="${v}" aria-label="Row value">
+          <td class="valcol"><div class="valcell"><input id="v-${r}-${i}" type="number" step="100" data-type="num" data-path="rounds.${r}.values.${i}" value="${v}" aria-label="Row value">
             <button class="icon" title="Remove row" data-act="del-row" data-r="${r}" data-i="${i}">✕</button></div></td>
-          ${R.categories.map((C, c) => { const cl = C.clues[i], p = `rounds.${r}.categories.${c}.clues.${i}`; return `
+          ${R.categories.map((C, c) => { const cl = C.clues[i], p = `rounds.${r}.categories.${c}.clues.${i}`, k = `${r}-${c}-${i}`; return `
           <td><div class="cell-ed ${cl.dd ? 'dd' : ''}">
-            <textarea data-path="${p}.q" placeholder="Clue">${esc(cl.q)}</textarea>
-            <input data-path="${p}.a" value="${esc(cl.a)}" placeholder="Correct response">
-            <label class="dd-toggle"><input type="checkbox" data-path="${p}.dd" ${cl.dd ? 'checked' : ''}> Daily Double</label>
+            <textarea id="q-${k}" data-path="${p}.q" placeholder="Clue" aria-label="Clue">${esc(cl.q)}</textarea>
+            <input id="a-${k}" data-path="${p}.a" value="${esc(cl.a)}" placeholder="Correct response" aria-label="Correct response">
+            <label class="dd-toggle"><input id="dd-${k}" type="checkbox" data-path="${p}.dd" ${cl.dd ? 'checked' : ''}> Daily Double</label>
           </div></td>`; }).join('')}
         </tr>`).join('')}</tbody>
       </table></div>
@@ -397,22 +671,22 @@ function renderEditor() {
   return `
   <header class="top">
     <button class="ghost" data-act="home">← Games</button>
-    <input class="title-input" data-path="title" value="${esc(g.title)}" placeholder="Game title" aria-label="Game title">
+    <input id="title" class="title-input" data-path="title" value="${esc(g.title)}" placeholder="Game title" aria-label="Game title">
     <span class="spacer"></span>
-    <span class="meta">Saved automatically</span>
+    <span class="meta hide-sm">Saved automatically</span>
     <button class="primary" data-act="setup" data-id="${g.id}">▶ Play</button>
   </header>
   <main class="editor">
-    <p class="hint">Write each clue as a statement; the correct response is shown to the host when revealed. Empty clues appear as blank tiles on the board.</p>
+    <p class="hint">Write each clue as a statement. The correct response is shown to you (the host) only, and to players once you reveal it. Empty clues appear as blank tiles on the board.</p>
     ${rounds}
     <div><button data-act="add-round">+ Add round</button></div>
     <section class="section">
       <div class="section-head"><h2>Final 2MixParty!</h2>
-        <label class="dd-toggle"><input type="checkbox" data-path="final.enabled" ${g.final.enabled ? 'checked' : ''}> Include</label></div>
+        <label class="dd-toggle"><input id="f-en" type="checkbox" data-path="final.enabled" ${g.final.enabled ? 'checked' : ''}> Include</label></div>
       <div class="final-ed">
-        <label>Category</label><input data-path="final.category" value="${esc(g.final.category)}" placeholder="Category">
-        <label>Clue</label><textarea data-path="final.q" rows="3" placeholder="Clue">${esc(g.final.q)}</textarea>
-        <label>Correct response</label><input data-path="final.a" value="${esc(g.final.a)}" placeholder="Correct response">
+        <label for="f-cat">Category</label><input id="f-cat" data-path="final.category" value="${esc(g.final.category)}" placeholder="Category">
+        <label for="f-q">Clue</label><textarea id="f-q" data-path="final.q" rows="3" placeholder="Clue">${esc(g.final.q)}</textarea>
+        <label for="f-a">Correct response</label><input id="f-a" data-path="final.a" value="${esc(g.final.a)}" placeholder="Correct response">
       </div>
     </section>
   </main>`;
@@ -420,13 +694,19 @@ function renderEditor() {
 
 function renderSetup() {
   const g = gameById(view.gameId);
+  if (!g) return renderHome();
   return `
-  <header class="top"><button class="ghost" data-act="home">← Games</button><strong>${esc(g.title)}</strong></header>
+  <header class="top"><button class="ghost" data-act="home">← Games</button><strong>${esc(g.title)}</strong><span class="spacer"></span>${connectedChip()}</header>
   <main class="panel">
     <h2>Who's playing?</h2>
+    <h3>Joined on their devices</h3>
+    ${peersList.length ? `<div class="remote-list">${peersList.map(p => `<span>${esc(p.name)}</span>`).join('')}</div>`
+      : `<p class="hint">No one yet. Players can also join after the game starts.</p>`}
+    <div class="row" style="margin-top:10px"><button data-act="invite">Show QR code & room code</button></div>
+    <h3>Players without a device</h3>
     <div class="plist">${view.players.map((n, i) => `
-      <div class="prow"><input data-pname="${i}" value="${esc(n)}" placeholder="Player or team name">
-      ${view.players.length > 1 ? `<button class="icon" title="Remove" data-act="del-player" data-i="${i}">✕</button>` : ''}</div>`).join('')}
+      <div class="prow"><input id="pn-${i}" data-pname="${i}" value="${esc(n)}" placeholder="Player or team name" aria-label="Player name">
+      <button class="icon" title="Remove" data-act="del-player" data-i="${i}">✕</button></div>`).join('')}
     </div>
     <div class="row">
       ${view.players.length < 10 ? `<button data-act="add-player">+ Add player</button>` : ''}
@@ -437,79 +717,112 @@ function renderSetup() {
   </main>`;
 }
 
+function boardCells(info, interactive) {
+  let cells = info.cats.map(n => `<div class="cat">${esc(n)}</div>`).join('');
+  info.values.forEach((v, i) => info.cats.forEach((_, c) => {
+    const on = info.open[c]?.[i];
+    cells += interactive
+      ? `<button class="cell" data-act="open" data-c="${c}" data-i="${i}" ${on ? '' : 'disabled aria-label="used"'}>${on ? fmt(v) : ''}</button>`
+      : `<div class="cell">${on ? fmt(v) : ''}</div>`;
+  }));
+  return cells;
+}
+
+function scoresBar(players, { host = false, you = null } = {}) {
+  return `<footer class="scores">
+    ${players.map(p => `<div class="player ${p.score < 0 ? 'neg' : ''} ${p.id === you ? 'you' : ''}">
+      <div class="pname">${esc(p.name)}${p.id === you ? ' (you)' : ''}</div>
+      ${host ? `<button class="pscore" data-act="edit-score" data-p="${p.id}" title="Click to edit score">${fmt(p.score)}</button>` : `<div class="pscore">${fmt(p.score)}</div>`}</div>`).join('')}
+    ${host ? `<button class="ghost undo" data-act="undo" ${play.log.length ? '' : 'disabled'} title="Undo last score change">↶ Undo</button>` : ''}
+  </footer>`;
+}
+
 function renderBoard() {
-  const g = playGame(), r = play.round, R = g.rounds[r];
+  const g = playGame(), r = play.round, info = roundInfo(g, r);
   const last = r === g.rounds.length - 1;
   const nextLabel = last ? (g.final.enabled ? 'Final 2MixParty! →' : 'Finish game →') : 'Next round →';
-  let cells = R.categories.map(C => `<div class="cat">${esc(C.name)}</div>`).join('');
-  R.values.forEach((v, i) => R.categories.forEach((C, c) => {
-    const hide = play.used[`${r}-${c}-${i}`] || !filled(C.clues[i]);
-    cells += `<button class="cell" data-act="open" data-c="${c}" data-i="${i}" ${hide ? 'disabled aria-label="used"' : ''}>${hide ? '' : fmt(v)}</button>`;
-  }));
   return `
   <div class="board-view">
     <header class="top">
       <button class="ghost" data-act="home">☰ Games</button>
-      <span class="round-name">${esc(R.name)}</span>
+      <span class="round-name">${esc(info.name)}</span>
       <span class="spacer"></span>
+      ${connectedChip()}
+      ${soundButton()}
       <button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button>
       ${r > 0 ? `<button class="ghost" data-act="prev-round">← Prev round</button>` : ''}
       <button data-act="next-round">${nextLabel}</button>
     </header>
-    <main class="board" style="--cols:${Math.max(R.categories.length, 1)}">
-      ${cells}
-      ${R.categories.length && roundComplete() ? `<div class="round-done"><p>Round complete!</p><button class="primary" data-act="next-round">${nextLabel}</button></div>` : ''}
+    <main class="board" style="--cols:${Math.max(info.cats.length, 1)}">
+      ${boardCells(info, true)}
+      ${roundComplete() ? `<div class="round-done"><p>Round complete!</p><button class="primary" data-act="next-round">${nextLabel}</button></div>` : ''}
     </main>
-    <footer class="scores">
-      ${play.players.map(p => `<div class="player ${p.score < 0 ? 'neg' : ''}">
-        <div class="pname">${esc(p.name)}</div>
-        <button class="pscore" data-act="edit-score" data-p="${p.id}" title="Click to edit score">${fmt(p.score)}</button></div>`).join('')}
-      <button class="ghost undo" data-act="undo" ${play.log.length ? '' : 'disabled'} title="Undo last score change">↶ Undo</button>
-    </footer>
+    ${scoresBar(play.players, { host: true })}
   </div>`;
 }
 
 function renderOverlay() {
   const ov = $('#overlay');
-  if (view.name !== 'board' || !view.clue) { ov.hidden = true; ov.innerHTML = ''; return; }
+  const vc = role === 'host' && view.name === 'board' && playGame() ? play.clue : null;
+  if (!vc) { ov.hidden = true; ov.innerHTML = ''; return; }
   const wasHidden = ov.hidden;
   ov.hidden = false;
-  if (wasHidden) { ov.style.animation = 'none'; ov.offsetHeight; ov.style.animation = ''; }
-  const vc = view.clue, g = playGame(), R = g.rounds[vc.r], C = R.categories[vc.c], clue = C.clues[vc.i], value = R.values[vc.i];
+  if (wasHidden) { ov.style.animation = 'none'; void ov.offsetHeight; ov.style.animation = ''; }
+  const g = playGame(), R = g.rounds[vc.r], C = R.categories[vc.c], clue = C.clues[vc.i], value = R.values[vc.i];
 
   if (vc.stage === 'dd') {
     const p = vc.ddPlayer && player(vc.ddPlayer);
     const maxW = p ? Math.max(p.score, Math.max(...R.values)) : 0;
     ov.innerHTML = `<div class="clue-card">
       <div class="dd-title">DAILY DOUBLE!</div>
-      <div class="clue-meta" style="justify-content:center">${esc(C.name)}</div>
+      <div class="clue-meta center">${esc(C.name)}</div>
       <p class="label">Who found it?</p>
       <div class="pick">${play.players.map(p => `<button class="chip ${vc.ddPlayer === p.id ? 'on' : ''}" data-act="dd-pick" data-p="${p.id}">${esc(p.name)}<small>${fmt(p.score)}</small></button>`).join('')}</div>
-      ${p ? `<p class="label">Wager (up to ${fmt(maxW)})</p><input type="number" class="wager" data-ddwager min="0" max="${maxW}" value="${vc.wager ?? ''}" autofocus>` : ''}
+      ${p ? `<label class="label" for="dd-wager">Wager (up to ${fmt(maxW)})</label><input id="dd-wager" type="number" class="wager" data-ddwager min="0" max="${maxW}" value="${esc(vc.wager ?? '')}">` : ''}
       <div class="err">${esc(vc.err || '')}</div>
       <div class="actions"><button data-act="clue-cancel">Back to board</button><button class="primary" data-act="dd-go">Show clue →</button></div>
     </div>`;
-    const w = ov.querySelector('.wager'); if (w) w.focus();
+    const w = ov.querySelector('.wager');
+    if (w) { w.focus(); const n = w.value.length; try { w.setSelectionRange(n, n); } catch {} }
     return;
   }
 
   const dd = !!vc.ddPlayer, worth = dd ? vc.wager : value;
-  const judges = dd ? [player(vc.ddPlayer)] : play.players;
+  const judges = dd ? [player(vc.ddPlayer)].filter(Boolean)
+    : [...vc.queue.map(player).filter(Boolean), ...play.players.filter(p => !vc.queue.includes(p.id))];
   ov.innerHTML = `<div class="clue-card">
-    <div class="clue-meta"><span>${esc(C.name)}</span><span>${dd ? `Daily Double · ${esc(player(vc.ddPlayer).name)} wagers ${fmt(worth)}` : fmt(value)}</span></div>
+    <div class="clue-meta"><span>${esc(C.name)}</span><span>${dd ? `Daily Double · ${esc(player(vc.ddPlayer)?.name)} wagers ${fmt(worth)}` : fmt(value)}</span></div>
     <div class="clue-text">${esc(clue.q)}</div>
-    ${vc.revealed ? `<div class="answer">${clue.a.trim() ? esc(clue.a) : '<em>(no response entered)</em>'}</div>`
-      : `<button class="reveal" data-act="reveal">Reveal response<kbd>Space</kbd></button>`}
-    <div class="judge">${judges.map(p => { const w = vc.wrong.includes(p.id); return `
-      <div class="jrow ${w ? 'wrong' : ''}"><span class="who">${esc(p.name)}</span>
+    ${vc.revealed ? `<div class="answer"><span class="tag">Correct response</span>${clue.a.trim() ? esc(clue.a) : '<em>(none entered)</em>'}</div>`
+      : `<div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${clue.a.trim() ? esc(clue.a) : '<em>(none entered)</em>'}</div>`}
+    ${dd ? '' : `<div class="buzzbar">
+      <span class="state ${vc.open ? 'open' : ''}">Buzzers ${vc.open ? 'open' : 'closed'}</span>
+      <button data-act="toggle-buzz">${vc.open ? 'Close buzzers' : 'Open buzzers'}</button>
+      <button data-act="reset-buzz" ${vc.queue.length ? '' : 'disabled'}>Clear buzz queue</button></div>`}
+    <div class="judge">${judges.map(p => { const w = vc.wrong.includes(p.id), qi = vc.queue.indexOf(p.id); return `
+      <div class="jrow ${w ? 'wrong' : ''} ${qi === 0 && !w ? 'first' : ''}">${qi >= 0 ? `<span class="pos">${qi + 1}</span>` : ''}<span class="who">${esc(p.name)}</span>
         <button class="ok" data-act="right" data-p="${p.id}" ${w ? 'disabled' : ''} title="Correct">✓ ${fmt(worth)}</button>
         <button class="no" data-act="wrong" data-p="${p.id}" ${w ? 'disabled' : ''} title="Incorrect">✗ ${fmt(-worth)}</button></div>`; }).join('')}
     </div>
     <div class="actions">
+      ${vc.revealed ? '' : `<button data-act="reveal">Show response to players<kbd>Space</kbd></button>`}
       ${dd ? '' : `<button data-act="clue-cancel">Back to board<kbd>Esc</kbd></button>`}
-      ${dd ? '' : `<button class="primary" data-act="clue-done">No one got it — close</button>`}
+      ${dd ? '' : `<button class="primary" data-act="clue-done">No one got it · close</button>`}
     </div>
   </div>`;
+}
+
+function timerBar(end, total = 30000) {
+  const left = end ? end - Date.now() : 0;
+  if (left <= 0) return end ? `<div class="timer"><div style="width:0"></div></div>` : '';
+  return `<div class="timer"><div style="animation-duration:${total}ms;animation-delay:-${Math.max(0, total - left)}ms"></div></div>`;
+}
+function podium(players) {
+  const ranked = [...players].sort((a, b) => b.score - a.score);
+  const top = ranked[0]?.score;
+  const tie = ranked.filter(p => p.score === top).length > 1;
+  return `<div class="dd-title" style="font-size:clamp(34px,6vw,80px)">${!ranked.length ? 'Game over' : tie ? "It's a tie!" : `${esc(ranked[0].name)} wins!`}</div>
+    <div class="podium">${ranked.map(p => `<div class="prow-r ${p.score === top ? 'win' : ''}"><span>${p.score === top ? '👑 ' : ''}${esc(p.name)}</span><span class="s">${fmt(p.score)}</span></div>`).join('')}</div>`;
 }
 
 function renderFinal() {
@@ -517,7 +830,7 @@ function renderFinal() {
   const head = `<header class="top">
       ${F.applied ? `<button class="ghost" data-act="home">☰ Games</button>` : `<button class="ghost" data-act="back-board">← Board</button>`}
       <span class="round-name">${F.stage === 'results' ? 'Final Scores' : 'Final 2MixParty!'}</span>
-      <span class="spacer"></span><button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button></header>`;
+      <span class="spacer"></span>${connectedChip()}${soundButton()}<button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button></header>`;
   let body = '';
   const eligible = p => p.score > 0;
 
@@ -529,202 +842,316 @@ function renderFinal() {
       <div class="actions"><button class="primary" data-act="f-wagers">Enter wagers →</button></div></div>`;
   } else if (F.stage === 'wager') {
     body = `<div class="clue-card">
-      <div class="clue-meta" style="justify-content:center">${esc(f.category)}</div>
-      <p class="label">Players with a positive score may wager up to their total.</p>
-      <div class="wtable">${play.players.map(p => `<div class="wrow"><strong>${esc(p.name)}</strong><span class="sc muted">${fmt(p.score)}</span>
-        ${eligible(p) ? `<input type="number" min="0" max="${p.score}" data-fwager="${p.id}" value="${F.wagers[p.id] ?? ''}" placeholder="Wager">` : `<span class="muted">Not eligible</span>`}</div>`).join('')}
+      <div class="clue-meta center">${esc(f.category)}</div>
+      <p class="label">Players with a positive score may wager up to their total. Players lock in wagers on their devices, and only you see the amounts. You can also type or change a wager here.</p>
+      <div class="wtable">${play.players.map(p => `<div class="wrow"><span><strong>${esc(p.name)}</strong>${F.submitted?.[p.id] ? ' <span class="locked">locked in</span>' : ''}</span><span class="sc muted">${fmt(p.score)}</span>
+        ${eligible(p) ? `<input id="fw-${p.id}" type="number" min="0" max="${p.score}" data-fwager="${p.id}" value="${esc(F.wagers[p.id] ?? '')}" placeholder="Wager" aria-label="${esc(p.name)} wager">` : `<span class="muted">Not eligible</span>`}</div>`).join('')}
       </div>
       <div class="err">${esc(F.err || '')}</div>
       <div class="actions"><button class="primary" data-act="f-clue">Show clue →</button></div></div>`;
   } else if (F.stage === 'clue') {
-    const bar = timer ? `<div class="timer"><div style="animation-duration:${timer.ms}ms;animation-delay:-${Date.now() - timer.start}ms"></div></div>` : '';
     body = `<div class="clue-card">
-      <div class="clue-meta" style="justify-content:center">${esc(f.category)}</div>
+      <div class="clue-meta center">${esc(f.category)}</div>
       <div class="clue-text">${esc(f.q)}</div>
-      ${bar}
+      ${timerBar(F.timerEnd)}
+      <div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${esc(f.a) || '<em>(none entered)</em>'}</div>
       <div class="actions">
-        <button data-act="f-timer">${timer ? 'Restart' : 'Start'} 30s timer</button>
+        <button data-act="f-timer">${F.timerEnd ? 'Restart' : 'Start'} 30s timer</button>
         <button class="primary" data-act="f-reveal">Reveal response<kbd>Space</kbd></button>
       </div></div>`;
   } else if (F.stage === 'reveal') {
     const players = play.players.filter(eligible);
     const allJudged = players.every(p => p.id in F.results);
     body = `<div class="clue-card">
-      <div class="clue-meta" style="justify-content:center">${esc(f.category)}</div>
+      <div class="clue-meta center">${esc(f.category)}</div>
       <div class="clue-text" style="font-size:clamp(18px,2.6vw,34px)">${esc(f.q)}</div>
-      <div class="answer">${esc(f.a) || '<em>(no response entered)</em>'}</div>
+      <div class="answer">${esc(f.a) || '<em>(none entered)</em>'}</div>
       <div class="wtable">${players.length ? players.map(p => { const res = F.results[p.id]; return `<div class="wrow judge-row">
         <strong>${esc(p.name)}</strong><span class="muted">wagered ${fmt(F.wagers[p.id] || 0)}</span>
-        <button class="ok ${res === true ? 'on' : ''}" data-act="f-judge" data-p="${p.id}" data-v="1">✓</button>
-        <button class="no ${res === false ? 'on' : ''}" data-act="f-judge" data-p="${p.id}" data-v="0">✗</button></div>`; }).join('')
+        <button class="ok ${res === true ? 'on' : ''}" data-act="f-judge" data-p="${p.id}" data-v="1" aria-label="Correct">✓</button>
+        <button class="no ${res === false ? 'on' : ''}" data-act="f-judge" data-p="${p.id}" data-v="0" aria-label="Incorrect">✗</button></div>`; }).join('')
         : `<p class="label" style="text-align:center">No players were eligible for Final 2MixParty.</p>`}
       </div>
       <div class="actions"><button class="primary" data-act="f-apply" ${allJudged ? '' : 'disabled'}>Final scores →</button></div></div>`;
   } else {
-    const ranked = [...play.players].sort((a, b) => b.score - a.score);
-    const top = ranked[0]?.score;
-    body = `<div class="clue-card">
-      <div class="dd-title" style="font-size:clamp(34px,6vw,80px)">${ranked.filter(p => p.score === top).length > 1 ? "It's a tie!" : `${esc(ranked[0].name)} wins!`}</div>
-      <div class="podium">${ranked.map(p => `<div class="prow-r ${p.score === top ? 'win' : ''}"><span>${p.score === top ? '👑 ' : ''}${esc(p.name)}</span><span class="s">${fmt(p.score)}</span></div>`).join('')}</div>
+    body = `<div class="clue-card">${podium(play.players)}
       <div class="actions"><button data-act="home">Back to games</button><button class="primary" data-act="rematch">Play again ↻</button></div></div>`;
   }
   return `<div class="final-view">${head}<main class="final-body">${body}</main></div>`;
 }
 
+// ---------- Player view ----------
+function buzzState() {
+  const c = live?.phase === 'board' ? live.clue : null;
+  if (pstate !== 'connected') return { label: 'Reconnecting…', cls: '', off: true };
+  if (!c) return { label: 'Wait for a clue', cls: '', off: true };
+  if (c.dd) return { label: 'Daily Double', cls: '', off: true };
+  if (c.stage !== 'clue') return { label: 'Get ready…', cls: '', off: true };
+  if (!live.players.some(p => p.id === me.pid)) return { label: 'Joining…', cls: '', off: true };
+  if (c.lockout.includes(me.pid)) return { label: 'Locked out', cls: 'out', off: true };
+  const pos = c.queue.indexOf(me.pid);
+  if (pos === 0) return { label: "You're up! Answer", cls: 'up', off: true };
+  if (pos > 0) return { label: `Buzzed · #${pos + 1} in line`, cls: 'queued', off: true };
+  if (me.buzzToken === c.token) return { label: 'Buzzed!', cls: 'queued', off: true };
+  if (!c.open) return { label: c.revealed ? 'Clue over' : 'Buzzers closed', cls: '', off: true };
+  return { label: 'BUZZ', cls: 'live', off: false };
+}
+
+function renderPlayer() {
+  if (!me.joined) {
+    return `<div class="player-join">
+      <h1 class="logo big">2MixParty!</h1>
+      <p class="muted" style="text-align:center">Join a game on this device. No account needed.</p>
+      <label for="join-code" class="label">Room code</label>
+      <input id="join-code" class="code-input" maxlength="4" value="${esc(me.code)}" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
+      <label for="join-name" class="label">Your name</label>
+      <input id="join-name" maxlength="24" value="${esc(me.name)}" placeholder="e.g. Alex" autocomplete="off">
+      <div class="err">${esc(me.err)}</div>
+      <button class="primary big" data-act="p-join">Join as a player</button>
+      <button class="ghost" data-act="p-watch">Just watch (TV screen)</button>
+      <button class="linkish" data-act="to-host">Host your own game instead</button>
+    </div>`;
+  }
+  const L = live, you = L?.players?.find(p => p.id === me.pid);
+  let main;
+  if (pstate === 'notfound' && !L) {
+    main = `<div class="wait"><p class="round-name">Room ${esc(me.code)} not found</p><p class="muted">Check the code with your host, and make sure their game page is open. Retrying…</p>
+      <button data-act="p-leave">Change code</button></div>`;
+  } else if (!L || L.phase === 'idle' || !L.players) {
+    main = `<div class="wait"><p class="round-name">${pstate === 'connected' ? 'Waiting for the host…' : 'Connecting…'}</p><p class="muted">The board appears here as soon as the game starts.</p></div>`;
+  } else if (L.phase === 'final') {
+    main = playerFinal(L);
+  } else if (L.clue) {
+    const c = L.clue, name = id => esc(L.players.find(p => p.id === id)?.name || 'Someone');
+    main = c.stage === 'dd'
+      ? `<div class="clue-stage"><div class="dd-title">DAILY DOUBLE!</div><div class="clue-meta center">${esc(c.cat)}</div>
+          <p class="label">${c.ddName ? `${esc(c.ddName)} is making a wager…` : 'Who found it?'}</p></div>`
+      : `<div class="clue-stage">
+          <div class="clue-meta"><span>${esc(c.cat)}</span><span>${c.dd ? `Daily Double · ${esc(c.ddName)} · ${fmt(c.wager)}` : fmt(c.value)}</span></div>
+          <div class="clue-text">${esc(c.q)}</div>
+          ${c.revealed ? `<div class="answer">${esc(c.a || '')}</div>` : ''}
+          <div class="queue-line">${!c.dd && c.queue.length ? `<b>${name(c.queue[0])}</b> buzzed in first${c.queue.length > 1 ? ` · then ${c.queue.slice(1).map(name).join(', ')}` : ''}` : ''}</div>
+        </div>`;
+  } else {
+    main = `<div class="board" style="--cols:${Math.max(L.round.cats.length, 1)}">${boardCells(L.round, false)}</div>`;
+  }
+  const b = buzzState();
+  const banner = pstate === 'lost' ? `<div class="conn-banner">Connection to the host lost. Reconnecting…</div>` : '';
+  return `<div class="pview">
+    <header class="top">
+      <span class="logo sm">2MixParty!</span>
+      ${L?.round && L.phase === 'board' ? `<span class="muted hide-sm">${esc(L.round.name)}</span>` : ''}
+      <span class="spacer"></span>
+      <span class="you-chip">${me.watch ? 'Watching' : `${esc(me.name)}${you ? ` · ${fmt(you.score)}` : ''}`}</span>
+      <button class="ghost" data-act="p-leave">${me.watch ? 'Join' : 'Rename'}</button>
+      ${soundButton()}
+      <button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button>
+    </header>
+    <main class="pmain">${banner}${main}</main>
+    ${L?.players?.length ? scoresBar(L.players, { you: me.watch ? null : me.pid }) : '<div></div>'}
+    ${me.watch ? '' : `<div class="buzz-wrap"><button class="buzzer ${b.cls}" data-act="buzz" ${b.off ? 'disabled' : ''}>${esc(b.label)}</button></div>`}
+  </div>`;
+}
+
+function playerFinal(L) {
+  const F = L.final;
+  let inner;
+  if (F.stage === 'results') inner = podium(L.players);
+  else if (F.stage === 'category' || F.stage === 'wager') inner = `<div class="dd-title" style="font-size:clamp(36px,8vw,90px)">Final 2MixParty!</div>
+      <p class="label">The category is</p><div class="final-cat">${esc(F.category)}</div>
+      ${F.stage === 'wager' ? playerWager(L, F) : ''}`;
+  else inner = `<div class="clue-meta center">${esc(F.category)}</div><div class="clue-text">${esc(F.q)}</div>
+      ${F.stage === 'clue' ? timerBar(F.timerEnd) : `<div class="answer">${esc(F.a || '')}</div>`}`;
+  return `<div class="clue-stage">${inner}</div>`;
+}
+
+function playerWager(L, F) {
+  const you = L.players.find(p => p.id === me.pid);
+  if (me.watch || !you) return `<p class="label">Players are locking in their wagers…</p>`;
+  if (you.score <= 0) return `<p class="label">You need a positive score to wager in Final 2MixParty. Sit tight and enjoy the clue.</p>`;
+  const locked = F.locked.includes(me.pid) && me.fwSent?.token === F.token;
+  return `<div class="wager-form">
+      <label class="label" for="fw-input">Your wager ($0 to ${fmt(you.score)})</label>
+      <input id="fw-input" type="number" inputmode="numeric" class="wager" min="0" max="${you.score}" value="${esc(me.fwDraft)}" placeholder="0">
+      <div class="err">${esc(me.fwErr)}</div>
+      <button class="primary big" data-act="p-wager" ${pstate === 'connected' ? '' : 'disabled'}>${locked ? 'Change wager' : 'Lock in wager'}</button>
+      <p class="label">${locked ? `Locked in: <strong>${fmt(me.fwSent.w)}</strong>. You can change it until the host shows the clue.`
+        : me.fwSent?.token === F.token ? 'Sending…' : 'Only the host sees your wager.'}</p>
+    </div>`;
+}
+
 // ---------- Actions ----------
 function goFinal() {
   const f = playGame().final;
-  play.final = f.enabled && f.q.trim() ? { stage: 'category', wagers: {}, results: {}, applied: false } : { stage: 'results', applied: true };
+  play.clue = null;
+  play.final = f.enabled && f.q.trim() ? { stage: 'category', wagers: {}, results: {}, applied: false, timerEnd: null } : { stage: 'results', applied: true };
   savePlay();
   view = { name: 'final' };
   render();
 }
 function markUsed() {
-  const { r, c, i } = view.clue;
+  const { r, c, i } = play.clue;
   play.used[`${r}-${c}-${i}`] = true;
-  view.clue = null;
+  play.clue = null;
   savePlay();
   render();
 }
-function download(name, text) {
+function clueWorth() {
+  const vc = play.clue;
+  return vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i];
+}
+function exportGame(g) {
+  const { id, ...data } = g;
+  const name = `${(g.title || 'game').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'game'}.json`;
   const a = document.createElement('a');
-  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
   a.download = name;
   document.body.appendChild(a); a.click(); a.remove();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 const actions = {
-  home() { stopTimer(); view = { name: 'home' }; render(); },
+  home() { view = { name: 'home' }; render(); },
   fullscreen() {
-    if (document.fullscreenElement) document.exitFullscreen();
-    else document.documentElement.requestFullscreen?.().catch(() => {});
+    if (document.fullscreenElement) document.exitFullscreen?.().catch(() => {});
+    else document.documentElement.requestFullscreen?.().catch(() => toast('Fullscreen isn’t available here.'));
   },
-  new() { const g = blankGame(); games.push(g); saveGames(); view = { name: 'edit', gameId: g.id }; render(); },
+  invite() { showInvite(); },
+  'toggle-sound'() {
+    muted = !muted; lsSet('jeoparty.muted', muted);
+    if (!muted) beep(880, .2);
+    render();
+  },
+  new() { const g = blankGame(); games.push(g); touch(); view = { name: 'edit', gameId: g.id }; render(); },
   edit(d) { view = { name: 'edit', gameId: d.id }; render(); },
   dup(d) {
-    const g = structuredClone(gameById(d.id));
-    g.id = uid(); g.title += ' (copy)';
-    games.splice(games.findIndex(x => x.id === d.id) + 1, 0, g);
-    saveGames(); render();
+    const g = clone(gameById(d.id));
+    g.id = uid(); g.title += ' (copy)'; g.created = Date.now();
+    games.push(g); touch(); render();
   },
-  del(d) {
+  async del(d) {
     const g = gameById(d.id);
-    if (!confirm(`Delete "${g.title}"? This can't be undone.`)) return;
-    games = games.filter(x => x.id !== d.id);
+    if (!await ask(`Delete "${g.title}"? This can't be undone.`, { ok: 'Delete', danger: true })) return;
     if (play?.gameId === d.id) { play = null; savePlay(); }
-    saveGames(); render();
+    games = games.filter(x => x.id !== d.id); saveGames(); render();
   },
-  export(d) {
-    const g = gameById(d.id);
-    const { id, ...data } = g;
-    download(`${(g.title || 'game').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'game'}.json`, JSON.stringify(data, null, 2));
-  },
+  export(d) { exportGame(gameById(d.id)); },
   import() { $('#file').value = ''; $('#file').click(); },
   resume() { view = { name: play.final ? 'final' : 'board' }; render(); },
-  abandon() { if (!confirm('Abandon the game in progress?')) return; play = null; savePlay(); render(); },
+  async abandon() {
+    if (!await ask('End the game in progress? Scores will be cleared.', { ok: 'End game', danger: true })) return;
+    play = null; savePlay(); render();
+  },
+  'to-player'() { location.href = `${location.pathname}?join=`; },
+  'to-host'() { location.href = location.pathname; },
 
   // Editor
-  'add-cat'(d) { const R = editGame().rounds[+d.r]; R.categories.push(newCat(R.values.length)); saveGames(); render(); },
-  'del-cat'(d) {
+  'add-cat'(d) { const R = editGame().rounds[+d.r]; R.categories.push(newCat(R.values.length)); touch(); render(); },
+  async 'del-cat'(d) {
     const R = editGame().rounds[+d.r], C = R.categories[+d.c];
-    if ((C.name || C.clues.some(filled)) && !confirm(`Remove category "${C.name || 'untitled'}" and its clues?`)) return;
-    R.categories.splice(+d.c, 1); saveGames(); render();
+    if ((C.name || C.clues.some(filled)) && !await ask(`Remove category "${C.name || 'untitled'}" and its clues?`, { ok: 'Remove', danger: true })) return;
+    R.categories.splice(+d.c, 1); touch(); render();
   },
   'add-row'(d) {
     const R = editGame().rounds[+d.r], v = R.values;
     v.push(v.length ? v[v.length - 1] + (v.length > 1 ? v[v.length - 1] - v[v.length - 2] : v[0]) : 200);
     R.categories.forEach(C => C.clues.push(blankClue()));
-    saveGames(); render();
+    touch(); render();
   },
-  'del-row'(d) {
+  async 'del-row'(d) {
     const R = editGame().rounds[+d.r], i = +d.i;
-    if (R.categories.some(C => filled(C.clues[i])) && !confirm(`Remove the ${fmt(R.values[i])} row and its clues?`)) return;
+    if (R.categories.some(C => filled(C.clues[i])) && !await ask(`Remove the ${fmt(R.values[i])} row and its clues?`, { ok: 'Remove', danger: true })) return;
     R.values.splice(i, 1); R.categories.forEach(C => C.clues.splice(i, 1));
-    saveGames(); render();
+    touch(); render();
   },
   'add-round'() {
     const g = editGame(), n = g.rounds.length + 1;
     g.rounds.push(newRound(n === 2 ? 'Double 2MixParty!' : `Round ${n}`, n));
-    saveGames(); render();
+    touch(); render();
   },
-  'del-round'(d) {
+  async 'del-round'(d) {
     const g = editGame();
-    if (!confirm(`Delete round "${g.rounds[+d.r].name}" and all its clues?`)) return;
-    g.rounds.splice(+d.r, 1); saveGames(); render();
+    if (!await ask(`Delete round "${g.rounds[+d.r].name}" and all its clues?`, { ok: 'Delete', danger: true })) return;
+    g.rounds.splice(+d.r, 1); touch(); render();
   },
 
   // Setup
   setup(d) {
-    const prev = play && play.gameId === d.id ? play.players.map(p => p.name) : null;
-    view = { name: 'setup', gameId: d.id, players: prev || ['Player 1', 'Player 2', 'Player 3'] };
+    const prev = play && play.gameId === d.id ? play.players.filter(p => !p.remote).map(p => p.name) : null;
+    view = { name: 'setup', gameId: d.id, players: prev || [] };
     render();
   },
   'add-player'() { view.players.push(`Player ${view.players.length + 1}`); render(); },
   'del-player'(d) { view.players.splice(+d.i, 1); render(); },
-  start() {
-    const names = view.players.map(s => s.trim()).filter(Boolean);
-    if (!names.length) return alert('Add at least one player.');
+  async start() {
+    const local = view.players.map(s => s.trim()).filter(Boolean).map(name => ({ id: uid(), name, score: 0 }));
+    const players = [...peersList.map(p => ({ id: p.pid, name: p.name, score: 0, remote: true })), ...local];
+    if (!players.length) { await ask('Add at least one player, or wait for someone to join on their device.', { cancel: null }); return; }
     if (!gameById(view.gameId).rounds.some(R => R.categories.some(C => C.clues.some(filled)))) {
-      if (!confirm('This game has no clues yet. Start anyway?')) return;
+      if (!await ask('This game has no clues yet. Start anyway?', { ok: 'Start' })) return;
     }
-    play = newPlay(view.gameId, names);
+    play = newPlay(view.gameId, players);
     savePlay(); view = { name: 'board' }; render();
   },
 
   // Board
   open(d) {
     const clue = playGame().rounds[play.round].categories[+d.c].clues[+d.i];
-    view.clue = { r: play.round, c: +d.c, i: +d.i, stage: clue.dd ? 'dd' : 'clue', revealed: false, wrong: [] };
-    renderOverlay();
+    play.clue = { token: uid(), r: play.round, c: +d.c, i: +d.i, stage: clue.dd ? 'dd' : 'clue', revealed: false, wrong: [], queue: [], open: !clue.dd };
+    savePlay(); render();
   },
-  'dd-pick'(d) { view.clue.ddPlayer = d.p; view.clue.err = ''; renderOverlay(); },
+  'dd-pick'(d) { play.clue.ddPlayer = d.p; play.clue.err = ''; savePlay(); render(); },
   'dd-go'() {
-    const vc = view.clue;
+    const vc = play.clue;
     if (!vc.ddPlayer) { vc.err = 'Pick who selected the Daily Double.'; return renderOverlay(); }
     const R = playGame().rounds[vc.r], max = Math.max(player(vc.ddPlayer).score, Math.max(...R.values));
     const w = parseInt(vc.wager);
-    if (isNaN(w) || w < 0 || w > max) { vc.err = `Wager must be between $0 and ${fmt(max)}.`; return renderOverlay(); }
-    vc.wager = w; vc.stage = 'clue'; vc.err = '';
-    renderOverlay();
+    if (isNaN(w) || w < 0 || w > max) { vc.err = `Enter a wager between $0 and ${fmt(max)}.`; return renderOverlay(); }
+    vc.wager = w; vc.stage = 'clue'; vc.err = ''; vc.open = false;
+    savePlay(); render();
   },
-  reveal() { view.clue.revealed = true; renderOverlay(); },
-  right(d) {
-    const vc = view.clue, worth = vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i];
-    adjust(d.p, worth); markUsed();
-  },
+  reveal() { play.clue.revealed = true; play.clue.open = false; savePlay(); render(); },
+  right(d) { adjust(d.p, clueWorth()); markUsed(); },
   wrong(d) {
-    const vc = view.clue, worth = vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i];
-    adjust(d.p, -worth);
+    const vc = play.clue;
+    adjust(d.p, -clueWorth());
     if (vc.ddPlayer) return markUsed();
     vc.wrong.push(d.p);
-    if (vc.wrong.length === play.players.length) vc.revealed = true;
-    render();
+    vc.queue = vc.queue.filter(x => x !== d.p);
+    if (vc.wrong.length === play.players.length) { vc.revealed = true; vc.open = false; }
+    savePlay(); render();
   },
+  'toggle-buzz'() { play.clue.open = !play.clue.open; savePlay(); render(); },
+  'reset-buzz'() { play.clue.queue = []; play.clue.token = uid(); play.clue.open = true; savePlay(); render(); },
   'clue-done'() { markUsed(); },
-  'clue-cancel'() { view.clue = null; renderOverlay(); },
+  'clue-cancel'() { play.clue = null; savePlay(); render(); },
   undo() {
     const e = play.log.pop();
     if (e) { const p = player(e.pid); if (p) p.score -= e.delta; savePlay(); }
     render();
   },
-  'edit-score'(d) {
+  async 'edit-score'(d) {
     const p = player(d.p);
-    const v = prompt(`Set score for ${p.name}:`, p.score);
+    const v = await ask(`Set the score for ${p.name}:`, { input: String(p.score), ok: 'Save' });
     if (v === null) return;
     const n = parseInt(String(v).replace(/[$,\s]/g, ''));
     if (isNaN(n)) return;
     adjust(p.id, n - p.score); render();
   },
   'next-round'() {
+    play.clue = null;
     if (play.round < playGame().rounds.length - 1) { play.round++; savePlay(); render(); }
     else goFinal();
   },
-  'prev-round'() { if (play.round > 0) { play.round--; savePlay(); render(); } },
+  'prev-round'() { if (play.round > 0) { play.clue = null; play.round--; savePlay(); render(); } },
 
   // Final
-  'back-board'() { stopTimer(); play.final = null; savePlay(); view = { name: 'board' }; render(); },
-  'f-wagers'() { play.final.stage = 'wager'; savePlay(); render(); },
+  'back-board'() { clearTimeout(beepTimer); play.final = null; savePlay(); view = { name: 'board' }; render(); },
+  'f-wagers'() {
+    const F = play.final;
+    F.stage = 'wager'; F.submitted = {}; F.token = uid();
+    savePlay(); render();
+  },
   'f-clue'() {
     const F = play.final;
     for (const p of play.players.filter(p => p.score > 0)) {
@@ -732,15 +1159,16 @@ const actions = {
       if (isNaN(w) || w < 0 || w > p.score) { F.err = `${p.name}'s wager must be between $0 and ${fmt(p.score)}.`; return render(); }
       F.wagers[p.id] = w;
     }
-    F.err = ''; F.stage = 'clue'; savePlay(); render();
+    F.err = ''; F.stage = 'clue';
+    savePlay(); render();
   },
   'f-timer'() {
-    stopTimer();
-    timer = { start: Date.now(), ms: 30000 };
-    timer.handle = setTimeout(beep, timer.ms);
-    render();
+    clearTimeout(beepTimer);
+    play.final.timerEnd = Date.now() + 30000;
+    beepTimer = setTimeout(() => beep(), 30000);
+    savePlay(); render();
   },
-  'f-reveal'() { stopTimer(); play.final.stage = 'reveal'; savePlay(); render(); },
+  'f-reveal'() { clearTimeout(beepTimer); play.final.stage = 'reveal'; savePlay(); render(); },
   'f-judge'(d) { play.final.results[d.p] = d.v === '1'; savePlay(); render(); },
   'f-apply'() {
     const F = play.final;
@@ -749,45 +1177,97 @@ const actions = {
     F.applied = true; F.stage = 'results'; savePlay(); render();
   },
   rematch() {
-    play = newPlay(play.gameId, play.players.map(p => p.name));
+    play = newPlay(play.gameId, play.players.map(p => ({ id: p.id, name: p.name, score: 0, remote: p.remote })));
     savePlay(); view = { name: 'board' }; render();
+  },
+
+  // Player
+  'p-join'() { joinAs(false); },
+  'p-watch'() { joinAs(true); },
+  'p-leave'() { me.joined = false; render(); },
+  'p-wager'() {
+    const F = live?.final, you = live?.players?.find(p => p.id === me.pid);
+    if (!F || F.stage !== 'wager' || !F.token || !you || !pconn) return;
+    const w = parseInt($('#fw-input')?.value ?? me.fwDraft);
+    if (isNaN(w) || w < 0 || w > you.score) { me.fwErr = `Enter a wager between $0 and ${fmt(you.score)}.`; return render(); }
+    me.fwErr = ''; me.fwDraft = String(w);
+    try { pconn.send({ type: 'wager', token: F.token, w }); me.fwSent = { token: F.token, w }; }
+    catch { me.fwErr = "Your wager didn't go through. Try again, or tell the host."; }
+    render();
+  },
+  buzz() {
+    const c = live?.clue;
+    if (!c || buzzState().off) return;
+    me.buzzToken = c.token;
+    buzzSound(!c.queue.length);
+    try { pconn.send({ type: 'buzz', token: c.token }); } catch { toast('Your buzz didn’t go through. Try again.'); me.buzzToken = null; }
+    try { navigator.vibrate?.(40); } catch {}
+    render();
   },
 };
 
+function joinAs(watch) {
+  const code = ($('#join-code')?.value ?? me.code).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+  const name = ($('#join-name')?.value ?? me.name).trim().slice(0, 24);
+  if (code.length !== 4) { me.err = 'Enter the 4-character room code from the host’s screen.'; return render(); }
+  if (!watch && !name) { me.err = 'Enter a name so the host knows who buzzed.'; return render(); }
+  const codeChanged = code !== me.code;
+  Object.assign(me, { code, watch, joined: true, err: '' });
+  if (!watch) me.name = name;
+  lsSet('jeoparty.name', me.name); lsSet('jeoparty.watch', watch); lsSet('jeoparty.lastCode', code);
+  history.replaceState(null, '', `${location.pathname}?join=${code}`);
+  if (codeChanged || !pconn || pstate !== 'connected') { live = null; connectPlayer(); }
+  else sendHello();
+  render();
+}
+
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-act]');
-  if (!el || el.disabled) return;
+  if (!muted) audio(); // unlock sound inside the viewer's gesture
+  if (!el || el.disabled || !$('#dialog').hidden) return;
   actions[el.dataset.act]?.(el.dataset, el);
 });
 
 function onField(e) {
   const el = e.target, d = el.dataset;
+  if (role === 'player') { if (el.id === 'fw-input') me.fwDraft = el.value; return; }
   if (d.path && view.name === 'edit') {
+    const g = editGame();
     const val = el.type === 'checkbox' ? el.checked : d.type === 'num' ? (parseInt(el.value) || 0) : el.value;
-    setPath(editGame(), d.path, val);
+    setPath(g, d.path, val);
     if (d.path.endsWith('.dd')) el.closest('.cell-ed')?.classList.toggle('dd', el.checked);
-    saveGames();
+    touch();
   } else if ('pname' in d && view.name === 'setup') {
     view.players[+d.pname] = el.value;
-  } else if ('ddwager' in d && view.clue) {
-    view.clue.wager = el.value;
+  } else if ('ddwager' in d && play?.clue) {
+    play.clue.wager = el.value;
   } else if (d.fwager && play?.final) {
     play.final.wagers[d.fwager] = el.value;
-    savePlay();
+    if (e.type === 'change') savePlay();
   }
 }
 document.addEventListener('input', onField);
 document.addEventListener('change', onField);
+document.addEventListener('focusout', () => setTimeout(() => {
+  if (needsRender && !typingInApp() && $('#dialog').hidden) { needsRender = false; render(); }
+}, 0));
 
 document.addEventListener('keydown', e => {
+  if (!$('#dialog').hidden) return;
   const typing = !!e.target.matches?.('input, textarea');
-  if (view.name === 'board' && view.clue) {
-    const vc = view.clue;
+  if (role === 'player') {
+    if (e.key === 'Enter' && (e.target.id === 'join-name' || e.target.id === 'join-code')) { e.preventDefault(); joinAs(false); }
+    else if (e.key === 'Enter' && e.target.id === 'fw-input') { e.preventDefault(); actions['p-wager'](); }
+    else if (!typing && (e.key === ' ' || e.key === 'Enter') && me.joined && !me.watch) { e.preventDefault(); actions.buzz(); }
+    return;
+  }
+  if (view.name === 'board' && play?.clue) {
+    const vc = play.clue;
     if (e.key === 'Enter' && typing && 'ddwager' in e.target.dataset) { e.preventDefault(); actions['dd-go'](); return; }
     if (typing) return;
     if (e.key === ' ' && vc.stage === 'clue' && !vc.revealed) { e.preventDefault(); actions.reveal(); }
     else if (e.key === 'Escape' && !vc.ddPlayer) actions['clue-cancel']();
-  } else if (view.name === 'final' && !typing && e.key === ' ' && play.final.stage === 'clue') {
+  } else if (view.name === 'final' && !typing && e.key === ' ' && play?.final?.stage === 'clue') {
     e.preventDefault(); actions['f-reveal']();
   }
 });
@@ -797,14 +1277,186 @@ $('#file').addEventListener('change', async e => {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    const list = (Array.isArray(data) ? data : [data]).map(normalize);
-    games.push(...list); saveGames(); render();
+    const list = (Array.isArray(data) ? data : [data]).map(g => normalize(g));
+    list.forEach((g, n) => { g.created = Date.now() + n; games.push(g); });
+    saveGames(); render();
+    toast(`Imported ${list.length} game${list.length > 1 ? 's' : ''}.`);
   } catch (err) {
-    alert('Could not import that file: ' + err.message);
+    ask(`That file couldn't be imported: ${err.message}`, { cancel: null });
   }
 });
 
-render();
+// ---------- Host networking ----------
+function startHost(attempt = 0) {
+  if (!window.Peer) { peerState = 'error'; refresh(); return; }
+  if (!roomCode()) lsSet('jeoparty.room', newCode());
+  peerState = 'connecting';
+  const p = new Peer(PEER_PREFIX + roomCode(), { debug: 0 });
+  peer = p;
+  p.on('open', () => { peerState = 'online'; refresh(); });
+  p.on('connection', setupHostConn);
+  p.on('disconnected', () => {
+    // Lost the broker only; open player connections keep working. Re-register so new players can join.
+    if (p.destroyed) return;
+    peerState = 'connecting'; refresh();
+    setTimeout(() => { if (!p.destroyed) p.reconnect(); }, 2000);
+  });
+  p.on('error', err => {
+    if (err.type === 'unavailable-id') {
+      // Usually this tab's previous session hasn't expired yet (a reload); after a few tries, take a new code.
+      p.destroy();
+      if (attempt < 4) setTimeout(() => startHost(attempt + 1), 3000);
+      else { lsSet('jeoparty.room', newCode()); startHost(0); }
+    } else if (['network', 'server-error', 'socket-error', 'socket-closed', 'browser-incompatible', 'ssl-unavailable'].includes(err.type)) {
+      peerState = 'error'; refresh();
+      if (err.type !== 'browser-incompatible') setTimeout(() => { if (peer === p) { p.destroy(); startHost(0); } }, 5000);
+    }
+  });
+}
+function setupHostConn(conn) {
+  const rec = { conn, pid: null, name: '', role: null };
+  conns.set(conn.connectionId, rec);
+  conn.on('data', m => onHostMsg(rec, m));
+  const drop = () => { if (conns.get(conn.connectionId) === rec) { conns.delete(conn.connectionId); refreshPeers(); } };
+  conn.on('close', drop);
+  conn.on('error', drop);
+}
+function onHostMsg(rec, m) {
+  if (!m || typeof m !== 'object') return;
+  if (m.type === 'hello') {
+    rec.role = m.role === 'watch' ? 'watch' : 'player';
+    rec.pid = str(m.pid, 40);
+    rec.name = str(m.name, 24).trim();
+    if (rec.role === 'player' && (!rec.pid || !rec.name)) { rec.role = null; return; }
+    for (const [id, r] of conns) {
+      if (r !== rec && r.pid && r.pid === rec.pid) { conns.delete(id); try { r.conn.close(); } catch {} }
+    }
+    refreshPeers();
+    send(rec, { type: 'state', state: buildLive() });
+  } else if (m.type === 'buzz') {
+    const cl = play?.clue;
+    if (rec.role !== 'player' || !cl || cl.stage !== 'clue' || !cl.open || cl.ddPlayer || m.token !== cl.token) return;
+    if (cl.queue.includes(rec.pid) || cl.wrong.includes(rec.pid) || !player(rec.pid)) return;
+    const first = cl.queue.length === 0;
+    cl.queue.push(rec.pid);
+    buzzSound(first);
+    savePlay(); refresh();
+  } else if (m.type === 'wager') {
+    const F = play?.final, pl = player(rec.pid);
+    if (rec.role !== 'player' || !F || F.stage !== 'wager' || m.token !== F.token || !pl || pl.score <= 0) return;
+    const n = parseInt(m.w);
+    if (isNaN(n) || n < 0 || n > pl.score) return;
+    F.wagers[rec.pid] = n; F.submitted[rec.pid] = true;
+    savePlay(); refresh();
+  }
+}
+function refreshPeers() {
+  const seen = new Map(); let watch = 0;
+  for (const r of conns.values()) {
+    if (r.role === 'watch') watch++;
+    else if (r.role === 'player' && !seen.has(r.pid)) seen.set(r.pid, { pid: r.pid, name: r.name });
+  }
+  peersList = [...seen.values()]; watchers = watch;
+  if (play && playGame()) {
+    let changed = false;
+    for (const x of peersList) {
+      const p = player(x.pid);
+      if (!p) { play.players.push({ id: x.pid, name: x.name, score: 0, remote: true }); changed = true; }
+      else if (p.name !== x.name) { p.name = x.name; changed = true; }
+    }
+    if (changed) savePlay();
+  }
+  refresh();
+}
+
+// ---------- Player networking ----------
+function sendHello() {
+  try { pconn?.send({ type: 'hello', pid: me.pid, name: me.watch ? '' : me.name, role: me.watch ? 'watch' : 'player' }); } catch {}
+}
+function openPlayerPeer() {
+  return new Promise((resolve, reject) => {
+    const p = new Peer({ debug: 0 });
+    const t = setTimeout(() => { p.destroy(); reject({ type: 'timeout' }); }, 12000);
+    p.on('open', () => { clearTimeout(t); resolve(p); });
+    p.on('error', err => {
+      if (!p.open) { clearTimeout(t); p.destroy(); reject(err); }
+      else if (err.type === 'peer-unavailable') { p.lastUnavailable = Date.now(); }
+      else if (['network', 'server-error', 'socket-error', 'socket-closed'].includes(err.type)) p.destroy();
+    });
+  });
+}
+let playerPeer = null;
+async function connectPlayer() {
+  if (pConnecting || !window.Peer) { if (!window.Peer) { pstate = 'lost'; render(); } return; }
+  pConnecting = true;
+  clearTimeout(retryTimer);
+  const old = pconn; pconn = null;
+  try { old?.close(); } catch {}
+  if (pstate !== 'lost') pstate = 'connecting';
+  refresh();
+  try {
+    if (!playerPeer || playerPeer.destroyed || playerPeer.disconnected) {
+      try { playerPeer?.destroy(); } catch {}
+      playerPeer = await openPlayerPeer();
+    }
+    const p = playerPeer, since = Date.now();
+    const c = p.connect(PEER_PREFIX + me.code, { reliable: true });
+    await new Promise((resolve, reject) => {
+      const iv = setInterval(() => {
+        if (p.lastUnavailable >= since) { cleanup(); reject({ type: 'peer-unavailable' }); }
+        else if (p.destroyed) { cleanup(); reject({ type: 'network' }); }
+      }, 250);
+      const t = setTimeout(() => { cleanup(); reject({ type: 'timeout' }); }, 12000);
+      const cleanup = () => { clearInterval(iv); clearTimeout(t); };
+      c.on('open', () => { cleanup(); resolve(); });
+      c.on('error', e => { cleanup(); reject(e); });
+    });
+    pconn = c;
+    pstate = 'connected';
+    c.on('data', m => { if (m && m.type === 'state' && m.state && typeof m.state === 'object') onLive(m.state); });
+    const lost = () => { if (pconn === c) { pconn = null; pstate = 'lost'; refresh(); scheduleRetry(); } };
+    c.on('close', lost);
+    c.on('error', lost);
+    sendHello();
+  } catch (e) {
+    try { playerPeer && e?.type !== 'peer-unavailable' && playerPeer.destroy(); } catch {}
+    pstate = e?.type === 'peer-unavailable' ? 'notfound' : 'lost';
+    scheduleRetry();
+  }
+  pConnecting = false;
+  refresh();
+}
+function scheduleRetry() {
+  clearTimeout(retryTimer);
+  retryTimer = setTimeout(() => { if (me.joined) connectPlayer(); }, 3000);
+}
+let lastToken = null, lastQueueLen = 0;
+function onLive(state) {
+  live = state;
+  const tok = live?.clue?.token || null, qLen = live?.clue?.queue?.length || 0;
+  if (tok && me.buzzToken && tok !== me.buzzToken) me.buzzToken = null;
+  // TV screens ring for every buzz; players only hear their own (played when they press).
+  if (me.watch && tok && tok === lastToken && qLen > lastQueueLen) buzzSound(lastQueueLen === 0);
+  lastToken = tok; lastQueueLen = qLen;
+  if (live?.final?.token && me.fwSent && me.fwSent.token !== live.final.token) me.fwSent = null;
+  if (typingInApp() && !(document.activeElement?.id === 'fw-input' && live?.final?.stage !== 'wager')) needsRender = true;
+  else render();
+}
+
+// ---------- Boot ----------
+if (role === 'host') {
+  games = (lsGet('jeoparty.games', null) || [sampleGame()]).map(g => normalize(g, g.id));
+  games.sort((a, b) => (a.created || 0) - (b.created || 0));
+  saveGames();
+  play = lsGet('jeoparty.play', null);
+  if (play && !gameById(play.gameId)) play = null;
+  if (play) view = { name: play.final ? 'final' : 'board' }; // a reload mid-game goes straight back to it
+  render();
+  startHost();
+} else {
+  if (me.code.length === 4 && (me.name || me.watch) && params.get('join')) { me.joined = true; connectPlayer(); }
+  render();
+}
 </script>
 </body>
 </html>
