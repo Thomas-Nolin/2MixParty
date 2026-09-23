@@ -263,10 +263,28 @@
   .invite { background: var(--panel); border: 1px solid var(--line); border-radius: 16px; padding: 22px; width: min(460px, 100%); display: flex; flex-direction: column; align-items: center; gap: 12px; text-align: center; }
   .invite h2 { margin: 0; font-family: var(--display); font-weight: 400; color: var(--accent); font-size: 26px; letter-spacing: .03em; }
   .room-code { font-family: var(--display); font-size: clamp(44px, 12vw, 72px); letter-spacing: .12em; color: #fff; line-height: 1; }
-  .qr { background: #fff; padding: 12px; border-radius: 12px; line-height: 0; }
-  .qr img, .qr canvas { display: block; width: 200px; height: 200px; }
   .join-link { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: rgba(0, 0, 0, .3); padding: .5em .8em; border-radius: 8px; overflow-wrap: anywhere; user-select: all; max-width: 100%; }
   .code-input { font-family: var(--display); font-size: 28px; letter-spacing: .2em; text-transform: uppercase; text-align: center; }
+  .av { flex: none; display: inline-block; vertical-align: middle; }
+  .ptop { display: flex; align-items: center; justify-content: center; gap: 6px; min-width: 0; }
+  .ptop .pname { min-width: 0; width: auto; }
+  .jrow .av { margin-right: -2px; }
+  .ptag { display: inline-flex; align-items: center; gap: 10px; }
+  .you-chip { display: inline-flex; align-items: center; gap: 6px; }
+  .queue-line b.first { display: inline-flex; align-items: center; gap: 6px; }
+  .remote-list span .av { margin-left: -4px; }
+  .player-join.wide { max-width: 860px; }
+  .join-grid { display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.3fr); gap: 28px; align-items: start; }
+  .join-form { display: flex; flex-direction: column; gap: 12px; }
+  .av-editor { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 16px; display: flex; flex-direction: column; gap: 8px; }
+  .av-preview { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 6px; }
+  .av-name { font-family: var(--display); font-size: 24px; letter-spacing: .03em; text-shadow: 2px 2px 0 #000; overflow-wrap: anywhere; text-align: center; }
+  .av-opts { display: flex; flex-wrap: wrap; gap: 6px; }
+  .av-opt { padding: 3px; border-radius: 10px; background: rgba(0, 0, 0, .25); line-height: 0; border: 2px solid transparent; }
+  .av-opt.on { border-color: var(--accent); background: var(--board-dk); }
+  .swatch { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .25); }
+  .swatch.on { outline: 3px solid var(--accent); outline-offset: 2px; border-color: #fff; }
+  @media (max-width: 720px) { .join-grid { grid-template-columns: 1fr; } }
   .player.away { opacity: .5; }
   button.pname { background: none; border: 0; padding: 0; width: 100%; font: inherit; font-size: 13px; cursor: pointer; }
   button.pname:hover { color: #fff; text-decoration: underline; }
@@ -305,7 +323,7 @@ function showFatal(msg) {
 }
 window.addEventListener('error', e => showFatal(e.message));
 
-// PeerJS (online play) and the QR code library load in the background, so the page never waits on them.
+// PeerJS (online play) loads in the background, so the page never waits on it.
 function loadScript(src, ms = 15000) {
   return new Promise(resolve => {
     const s = document.createElement('script');
@@ -317,7 +335,6 @@ function loadScript(src, ms = 15000) {
   });
 }
 const peerReady = loadScript('https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js');
-loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js');
 </script>
 <script>
 const $ = s => document.querySelector(s);
@@ -356,8 +373,69 @@ const me = {
   code: (params.get('join') || lsGet('jeoparty.lastCode', '') || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4),
   joined: false, buzzToken: null, err: '',
   fwDraft: '', fwErr: '', fwSent: null,
+  av: null,
 };
 lsSet('jeoparty.pid', me.pid);
+
+// ---------- Avatars ----------
+// Players pick a hairstyle, one accessory, a skin tone and a name colour (the shirt matches the name).
+// The host only accepts values from these lists, so nothing a player sends ends up in the page as-is.
+const AV = {
+  hair: ['short', 'long', 'spiky', 'curly', 'bun', 'mohawk', 'none'],
+  acc: ['none', 'glasses', 'sunglasses', 'partyhat', 'crown', 'headphones', 'bow', 'mustache'],
+  skin: ['#f9dcc4', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'],
+  color: ['#ffffff', '#ffa8d8', '#c9a8ff', '#7fd4ff', '#8ff0bd', '#ffe37a', '#ffb27a', '#ff8f93'],
+};
+const AV_LABEL = {
+  hair: { short: 'Short', long: 'Long', spiky: 'Spiky', curly: 'Curly', bun: 'Bun', mohawk: 'Mohawk', none: 'Bald' },
+  acc: { none: 'None', glasses: 'Glasses', sunglasses: 'Sunglasses', partyhat: 'Party hat', crown: 'Crown', headphones: 'Headphones', bow: 'Bow', mustache: 'Mustache' },
+};
+const pickFrom = list => list[Math.floor(Math.random() * list.length)];
+function cleanAv(a) {
+  a = a && typeof a === 'object' ? a : {};
+  return {
+    hair: AV.hair.includes(a.hair) ? a.hair : 'short',
+    acc: AV.acc.includes(a.acc) ? a.acc : 'none',
+    skin: AV.skin.includes(a.skin) ? a.skin : '#e0ac69',
+    color: AV.color.includes(a.color) ? a.color : '#ffffff',
+  };
+}
+function avatarSvg(av, size = 36) {
+  const a = cleanAv(av), H = '#3b2417', ink = '#1f0d3f';
+  const back = {
+    long: `<path d="M7.5 35 L7.5 19 Q7.5 6.5 20 6.5 Q32.5 6.5 32.5 19 L32.5 35 Z" fill="${H}"/>`,
+    bun: `<circle cx="20" cy="6.5" r="4.6" fill="${H}"/>`,
+  }[a.hair] || '';
+  const front = {
+    short: `<path d="M9 21 Q8.5 8.5 20 8.5 Q31.5 8.5 31 21 Q28 14.5 20 14 Q12 14.5 9 21Z" fill="${H}"/>`,
+    long: `<path d="M9 21 Q8.5 8.5 20 8.5 Q31.5 8.5 31 21 Q27 13 20 13.5 Q13 13 9 21Z" fill="${H}"/>`,
+    spiky: `<path d="M9 21 L9.5 12 L13 15 L14.5 7.5 L18 12.5 L20 5.5 L22 12.5 L25.5 7.5 L27 15 L30.5 12 L31 21 Q27 15 20 15 Q13 15 9 21Z" fill="${H}"/>`,
+    curly: `<g fill="${H}"><circle cx="11" cy="17" r="4"/><circle cx="13.5" cy="12" r="4.2"/><circle cx="20" cy="10" r="4.5"/><circle cx="26.5" cy="12" r="4.2"/><circle cx="29" cy="17" r="4"/></g>`,
+    bun: `<path d="M9 21 Q8.5 9 20 9 Q31.5 9 31 21 Q28 14 20 14 Q12 14 9 21Z" fill="${H}"/>`,
+    mohawk: `<path d="M17.5 4 Q20 2.5 22.5 4 L22 14 L18 14 Z" fill="${H}"/>`,
+  }[a.hair] || '';
+  const acc = {
+    glasses: `<g fill="none" stroke="${ink}" stroke-width="1.2"><circle cx="15.8" cy="22" r="3"/><circle cx="24.2" cy="22" r="3"/><path d="M18.8 22 H21.2"/></g>`,
+    sunglasses: `<g fill="${ink}"><rect x="12" y="19.8" width="7" height="4.4" rx="1.8"/><rect x="21" y="19.8" width="7" height="4.4" rx="1.8"/><rect x="18.5" y="21" width="3" height="1"/></g>`,
+    partyhat: `<path d="M13 12 L20 -1 L27 12 Z" fill="#ffa8d8"/><path d="M15.2 8 H24.8 M17.3 4 H22.7" stroke="#7fd4ff" stroke-width="1.4"/><circle cx="20" cy="-1" r="1.8" fill="#ffe37a"/>`,
+    crown: `<path d="M12 12 L12 4.5 L16 8 L20 3 L24 8 L28 4.5 L28 12 Z" fill="#ffd34d" stroke="#b8860b" stroke-width=".6"/>`,
+    headphones: `<path d="M8.5 22 Q8.5 7 20 7 Q31.5 7 31.5 22" fill="none" stroke="#ddd0fa" stroke-width="2"/><rect x="6.5" y="19" width="4" height="7" rx="1.5" fill="#ff8f93"/><rect x="29.5" y="19" width="4" height="7" rx="1.5" fill="#ff8f93"/>`,
+    bow: `<g fill="#ff5fa8"><path d="M25 11 L30.5 7.5 L30.5 14.5 Z"/><path d="M25 11 L19.5 7.5 L19.5 14.5 Z"/><circle cx="25" cy="11" r="1.7"/></g>`,
+    mustache: `<path d="M15.5 26.2 Q18 24.5 20 26 Q22 24.5 24.5 26.2 Q22 27.6 20 26.8 Q18 27.6 15.5 26.2Z" fill="${H}"/>`,
+  }[a.acc] || '';
+  return `<svg class="av" width="${size}" height="${size}" viewBox="0 -4 40 44" aria-hidden="true">
+    <path d="M4.5 40 Q5.5 30.5 20 30.5 Q34.5 30.5 35.5 40 Z" fill="${a.color}"/>${back}
+    <circle cx="20" cy="21" r="11" fill="${a.skin}"/>
+    <circle cx="16.2" cy="22" r="1.3" fill="${ink}"/><circle cx="23.8" cy="22" r="1.3" fill="${ink}"/>
+    <path d="M16.5 26 Q20 29 23.5 26" stroke="${ink}" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    ${front}${acc}</svg>`;
+}
+// A player's name in their chosen colour (players added by the host without a device stay white).
+const nameHtml = p => `<span class="pn" style="color:${cleanAv(p?.av).color}">${esc(p?.name)}</span>`;
+
+// This device's avatar: remembered, or a random starting look the first time.
+me.av = cleanAv(lsGet('jeoparty.avatar', null) || { hair: pickFrom(AV.hair.slice(0, 6)), acc: 'none', skin: pickFrom(AV.skin), color: pickFrom(AV.color) });
+lsSet('jeoparty.avatar', me.av);
 
 // ---------- Model ----------
 const blankClue = () => ({ q: '', a: '', dd: false });
@@ -464,7 +542,7 @@ function send(rec, msg) { try { if (rec.conn.open) rec.conn.send(msg); } catch {
 function buildLive() {
   const g = playGame();
   if (!g) return { phase: 'idle' };
-  const base = { title: g.title, players: play.players.map(({ id, name, score }) => ({ id, name, score, away: isAway(id) })) };
+  const base = { title: g.title, players: play.players.map(({ id, name, av, score }) => ({ id, name, av: av || null, score, away: isAway(id) })) };
   if (play.final) {
     const f = g.final, F = play.final;
     return { ...base, phase: 'final', final: {
@@ -602,7 +680,7 @@ function showInvite() {
   d.innerHTML = `<div class="invite" role="dialog" aria-modal="true" aria-label="Invite players">
     <h2>Join the game</h2>
     ${peerState === 'online' ? `
-      ${hosted() ? `<div class="qr" id="qr"></div><p class="label">Scan with a phone camera, or open this link:</p>
+      ${hosted() ? `<p class="label">Send players this link:</p>
         <div class="join-link" id="join-link">${esc(joinLink())}</div>
         <button data-dlg="copy">Copy link</button>
         <p class="label">Or open the game page, choose <strong>Join a game</strong>, and enter the code:</p>` : `<p class="label">Players open the game's web address, choose <strong>Join a game</strong>, and enter:</p>`}
@@ -610,9 +688,6 @@ function showInvite() {
     : `<p class="label">${peerState === 'connecting' ? 'Opening your room… try again in a moment.' : "Online play isn't reachable right now. Check your internet connection; the game still works on this screen."}</p>`}
     <div class="actions"><button class="primary" data-dlg="1">Done</button></div></div>`;
   d.hidden = false;
-  if (peerState === 'online' && hosted() && window.QRCode) {
-    try { new QRCode($('#qr'), { text: joinLink(), width: 200, height: 200, colorDark: '#120a24', colorLight: '#ffffff', correctLevel: QRCode.CorrectLevel.M }); } catch {}
-  }
   d.querySelector('[data-dlg="1"]').focus();
   const close = () => { d.hidden = true; d.innerHTML = ''; d.onclick = d.onkeydown = null; };
   d.onclick = async e => {
@@ -669,7 +744,7 @@ function renderHome() {
     ${inProgress ? `<div class="resume"><div><strong>Game in progress:</strong> ${esc(inProgress.title)}<div class="meta">${play.players.map(p => `${esc(p.name)} ${fmt(p.score)}`).join(' · ')}</div></div>
       <span class="spacer"></span><button class="ghost" data-act="abandon">End game</button><button class="primary" data-act="resume">Resume ▶</button></div>` : ''}
     <div class="howto"><p><strong>You're the host.</strong> This screen shows the correct responses and controls the board, so keep it to yourself.</p>
-      <p class="muted">Press <strong>Invite players</strong> for a QR code, link and room code. Players join on their phones with no account and get a buzzer. Put a second device on the TV and join it with "Just watch" to show the board to the room. Keep this tab open during the game: it runs the game.</p></div>
+      <p class="muted">Press <strong>Invite players</strong> for the join link and room code. Players join with no account, pick an avatar and get a buzzer. Put a second device on the TV and join it with "Just watch" to show the board to the room. Keep this tab open during the game: it runs the game.</p></div>
     <div class="toolbar">
       <button class="primary" data-act="new">+ New game</button>
       <button data-act="import">Import JSON</button>
@@ -753,11 +828,11 @@ function renderSetup() {
   <main class="panel">
     <h2>Who's playing?</h2>
     <h3>Joined on their devices</h3>
-    ${peersList.length ? `<div class="remote-list">${peersList.map(p => `<span>${esc(p.name)}<button class="icon" data-act="kick" data-p="${esc(p.pid)}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}">✕</button></span>`).join('')}</div>`
+    ${peersList.length ? `<div class="remote-list">${peersList.map(p => `<span>${avatarSvg(p.av, 24)}${nameHtml(p)}<button class="icon" data-act="kick" data-p="${esc(p.pid)}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}">✕</button></span>`).join('')}</div>`
       : `<p class="hint">No one yet. Players can also join after the game starts.</p>`}
     ${blocked.length ? `<h3>Removed players</h3><p class="hint">They can't rejoin until you let them back in.</p>
       <div class="remote-list">${blocked.map(b => `<span class="blocked">${esc(b.name)}<button class="icon" data-act="unblock" data-p="${esc(b.pid)}">Allow back</button></span>`).join('')}</div>` : ''}
-    <div class="row" style="margin-top:10px"><button data-act="invite">Show QR code & room code</button></div>
+    <div class="row" style="margin-top:10px"><button data-act="invite">Show join link & room code</button></div>
     <h3>Players without a device</h3>
     <div class="plist">${view.players.map((n, i) => `
       <div class="prow"><input id="pn-${i}" data-pname="${i}" value="${esc(n)}" placeholder="Player or team name" aria-label="Player name">
@@ -789,8 +864,9 @@ const isAway = pid => !!player(pid)?.remote && !peersList.some(x => x.pid === pi
 function scoresBar(players, { host = false, you = null } = {}) {
   return `<footer class="scores">
     ${players.map(p => { const away = host ? isAway(p.id) : p.away; return `<div class="player ${p.score < 0 ? 'neg' : ''} ${p.id === you ? 'you' : ''} ${away ? 'away' : ''}">
-      ${host ? `<button class="pname" data-act="player-menu" data-p="${p.id}" title="Set score or remove ${esc(p.name)}">${esc(p.name)}${away ? ' · away' : ''} ▾</button>`
-        : `<div class="pname">${esc(p.name)}${p.id === you ? ' (you)' : ''}${away ? ' · away' : ''}</div>`}
+      <div class="ptop">${avatarSvg(p.av, 34)}
+      ${host ? `<button class="pname" data-act="player-menu" data-p="${p.id}" title="Set score or remove ${esc(p.name)}">${nameHtml(p)}${away ? ' · away' : ''} ▾</button>`
+        : `<div class="pname">${nameHtml(p)}${p.id === you ? ' (you)' : ''}${away ? ' · away' : ''}</div>`}</div>
       ${host ? `<button class="pscore" data-act="edit-score" data-p="${p.id}" title="Click to edit score">${fmt(p.score)}</button>` : `<div class="pscore">${fmt(p.score)}</div>`}</div>`; }).join('')}
     ${host ? `<button class="ghost undo" data-act="undo" ${play.log.length ? '' : 'disabled'} title="Undo last score change">↶ Undo</button>` : ''}
   </footer>`;
@@ -859,7 +935,7 @@ function renderOverlay() {
       <button data-act="toggle-buzz">${vc.open ? 'Close buzzers' : 'Open buzzers'}</button>
       <button data-act="reset-buzz" ${vc.queue.length ? '' : 'disabled'}>Clear buzz queue</button></div>`}
     <div class="judge">${judges.map(p => { const w = vc.wrong.includes(p.id), qi = vc.queue.indexOf(p.id); return `
-      <div class="jrow ${w ? 'wrong' : ''} ${qi === 0 && !w ? 'first' : ''}">${qi >= 0 ? `<span class="pos">${qi + 1}</span>` : ''}<span class="who">${esc(p.name)}</span>
+      <div class="jrow ${w ? 'wrong' : ''} ${qi === 0 && !w ? 'first' : ''}">${qi >= 0 ? `<span class="pos">${qi + 1}</span>` : ''}${avatarSvg(p.av, 28)}<span class="who">${nameHtml(p)}</span>
         <button class="ok" data-act="right" data-p="${p.id}" ${w ? 'disabled' : ''} title="Correct">✓ ${fmt(worth)}</button>
         <button class="no" data-act="wrong" data-p="${p.id}" ${w ? 'disabled' : ''} title="Incorrect">✗ ${fmt(-worth)}</button></div>`; }).join('')}
     </div>
@@ -881,7 +957,7 @@ function podium(players) {
   const top = ranked[0]?.score;
   const tie = ranked.filter(p => p.score === top).length > 1;
   return `<div class="dd-title" style="font-size:clamp(34px,6vw,80px)">${!ranked.length ? 'Game over' : tie ? "It's a tie!" : `${esc(ranked[0].name)} wins!`}</div>
-    <div class="podium">${ranked.map(p => `<div class="prow-r ${p.score === top ? 'win' : ''}"><span>${p.score === top ? '👑 ' : ''}${esc(p.name)}</span><span class="s">${fmt(p.score)}</span></div>`).join('')}</div>`;
+    <div class="podium">${ranked.map(p => `<div class="prow-r ${p.score === top ? 'win' : ''}"><span class="ptag">${avatarSvg(p.av, 40)}${p.score === top ? `<span>👑 ${esc(p.name)}</span>` : nameHtml(p)}</span><span class="s">${fmt(p.score)}</span></div>`).join('')}</div>`;
 }
 
 function renderFinal() {
@@ -966,17 +1042,34 @@ function renderPlayer() {
     </div>`;
   }
   if (!me.joined) {
-    return `<div class="player-join">
+    const opt = (k, v, preview, label) => `<button class="av-opt ${me.av[k] === v ? 'on' : ''}" data-act="av-set" data-k="${k}" data-v="${v}" title="${label}" aria-label="${label}" aria-pressed="${me.av[k] === v}">${preview}</button>`;
+    const swatch = (k, v, label) => `<button class="swatch ${me.av[k] === v ? 'on' : ''}" style="background:${v}" data-act="av-set" data-k="${k}" data-v="${v}" title="${label}" aria-label="${label}" aria-pressed="${me.av[k] === v}"></button>`;
+    return `<div class="player-join wide">
       <h1 class="logo big">2MixParty!</h1>
       <p class="muted" style="text-align:center">Join a game on this device. No account needed.</p>
-      <label for="join-code" class="label">Room code</label>
-      <input id="join-code" class="code-input" maxlength="4" value="${esc(me.code)}" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
-      <label for="join-name" class="label">Your name</label>
-      <input id="join-name" maxlength="24" value="${esc(me.name)}" placeholder="e.g. Alex" autocomplete="off">
-      <div class="err">${esc(me.err)}</div>
-      <button class="primary big" data-act="p-join">Join as a player</button>
-      <button class="ghost" data-act="p-watch">Just watch (TV screen)</button>
-      <button class="linkish" data-act="to-host">Host your own game instead</button>
+      <div class="join-grid">
+        <div class="join-form">
+          <label for="join-code" class="label">Room code</label>
+          <input id="join-code" class="code-input" maxlength="4" value="${esc(me.code)}" placeholder="ABCD" autocomplete="off" autocapitalize="characters">
+          <label for="join-name" class="label">Your name</label>
+          <input id="join-name" maxlength="24" value="${esc(me.name)}" placeholder="e.g. Alex" autocomplete="off">
+          <div class="err">${esc(me.err)}</div>
+          <button class="primary big" data-act="p-join">Join as a player</button>
+          <button class="ghost" data-act="p-watch">Just watch (TV screen)</button>
+          <button class="linkish" data-act="to-host">Host your own game instead</button>
+        </div>
+        <div class="av-editor">
+          <div class="av-preview">${avatarSvg(me.av, 112)}<div class="av-name" id="av-name" style="color:${me.av.color}">${esc(me.name) || 'Your name'}</div></div>
+          <p class="label">Hairstyle</p>
+          <div class="av-opts">${AV.hair.map(h => opt('hair', h, avatarSvg({ ...me.av, hair: h, acc: 'none' }, 38), AV_LABEL.hair[h])).join('')}</div>
+          <p class="label">Accessory</p>
+          <div class="av-opts">${AV.acc.map(x => opt('acc', x, avatarSvg({ ...me.av, acc: x }, 38), AV_LABEL.acc[x])).join('')}</div>
+          <p class="label">Skin tone</p>
+          <div class="av-opts">${AV.skin.map((c, i) => swatch('skin', c, `Skin tone ${i + 1}`)).join('')}</div>
+          <p class="label">Name colour</p>
+          <div class="av-opts">${AV.color.map((c, i) => swatch('color', c, `Name colour ${i + 1}`)).join('')}</div>
+        </div>
+      </div>
     </div>`;
   }
   const L = live, you = L?.players?.find(p => p.id === me.pid);
@@ -989,7 +1082,7 @@ function renderPlayer() {
   } else if (L.phase === 'final') {
     main = playerFinal(L);
   } else if (L.clue) {
-    const c = L.clue, name = id => esc(L.players.find(p => p.id === id)?.name || 'Someone');
+    const c = L.clue, name = id => { const p = L.players.find(p => p.id === id); return p ? nameHtml(p) : 'Someone'; };
     main = c.stage === 'dd'
       ? `<div class="clue-stage"><div class="dd-title">DAILY DOUBLE!</div><div class="clue-meta center">${esc(c.cat)}</div>
           <p class="label">${c.ddName ? `${esc(c.ddName)} is making a wager…` : 'Who found it?'}</p></div>`
@@ -997,7 +1090,7 @@ function renderPlayer() {
           <div class="clue-meta"><span>${esc(c.cat)}</span><span>${c.dd ? `Daily Double · ${esc(c.ddName)} · ${fmt(c.wager)}` : fmt(c.value)}</span></div>
           <div class="clue-text">${esc(c.q)}</div>
           ${c.revealed ? `<div class="answer">${esc(c.a || '')}</div>` : ''}
-          <div class="queue-line">${!c.dd && c.queue.length ? `<b>${name(c.queue[0])}</b> buzzed in first${c.queue.length > 1 ? ` · then ${c.queue.slice(1).map(name).join(', ')}` : ''}` : ''}</div>
+          <div class="queue-line">${!c.dd && c.queue.length ? `<b class="first">${avatarSvg(L.players.find(p => p.id === c.queue[0])?.av, 28)}${name(c.queue[0])}</b> buzzed in first${c.queue.length > 1 ? ` · then ${c.queue.slice(1).map(name).join(', ')}` : ''}` : ''}</div>
         </div>`;
   } else {
     main = `<div class="board" style="--cols:${Math.max(L.round.cats.length, 1)}">${boardCells(L.round, false)}</div>`;
@@ -1009,8 +1102,8 @@ function renderPlayer() {
       <span class="logo sm">2MixParty!</span>
       ${L?.round && L.phase === 'board' ? `<span class="muted hide-sm">${esc(L.round.name)}</span>` : ''}
       <span class="spacer"></span>
-      <span class="you-chip">${me.watch ? 'Watching' : `${esc(me.name)}${you ? ` · ${fmt(you.score)}` : ''}`}</span>
-      <button class="ghost" data-act="p-leave">${me.watch ? 'Join' : 'Rename'}</button>
+      <span class="you-chip">${me.watch ? 'Watching' : `${avatarSvg(me.av, 24)}${nameHtml(me)}${you ? ` · ${fmt(you.score)}` : ''}`}</span>
+      <button class="ghost" data-act="p-leave">${me.watch ? 'Join' : 'Edit profile'}</button>
       ${soundButton()}
       <button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button>
     </header>
@@ -1152,7 +1245,7 @@ const actions = {
   'del-player'(d) { view.players.splice(+d.i, 1); render(); },
   async start() {
     const local = view.players.map(s => s.trim()).filter(Boolean).map(name => ({ id: uid(), name, score: 0 }));
-    const players = [...peersList.map(p => ({ id: p.pid, name: p.name, score: 0, remote: true })), ...local];
+    const players = [...peersList.map(p => ({ id: p.pid, name: p.name, av: p.av, score: 0, remote: true })), ...local];
     if (!players.length) { await ask('Add at least one player, or wait for someone to join on their device.', { cancel: null }); return; }
     if (!gameById(view.gameId).rounds.some(R => R.categories.some(C => C.clues.some(filled)))) {
       if (!await ask('This game has no clues yet. Start anyway?', { ok: 'Start' })) return;
@@ -1244,7 +1337,7 @@ const actions = {
     F.applied = true; F.stage = 'results'; savePlay(); render();
   },
   rematch() {
-    play = newPlay(play.gameId, play.players.map(p => ({ id: p.id, name: p.name, score: 0, remote: p.remote })));
+    play = newPlay(play.gameId, play.players.map(p => ({ id: p.id, name: p.name, av: p.av, score: 0, remote: p.remote })));
     savePlay(); view = { name: 'board' }; render();
   },
 
@@ -1252,6 +1345,13 @@ const actions = {
   'p-join'() { joinAs(false); },
   'p-watch'() { joinAs(true); },
   'p-leave'() { me.joined = false; render(); },
+  'av-set'(d) {
+    me.name = $('#join-name')?.value ?? me.name;
+    me.code = ($('#join-code')?.value ?? me.code).toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4);
+    me.av = cleanAv({ ...me.av, [d.k]: d.v });
+    lsSet('jeoparty.avatar', me.av);
+    render();
+  },
   'p-retry'() { me.kicked = false; me.joined = true; live = null; pstate = 'connecting'; connectPlayer(); render(); },
   async 'player-menu'(d) {
     const p = player(d.p);
@@ -1323,7 +1423,11 @@ document.addEventListener('click', e => {
 
 function onField(e) {
   const el = e.target, d = el.dataset;
-  if (role === 'player') { if (el.id === 'fw-input') me.fwDraft = el.value; return; }
+  if (role === 'player') {
+    if (el.id === 'fw-input') me.fwDraft = el.value;
+    else if (el.id === 'join-name') { const n = $('#av-name'); if (n) n.textContent = el.value.trim() || 'Your name'; }
+    return;
+  }
   if (d.path && view.name === 'edit') {
     const g = editGame();
     const val = el.type === 'checkbox' ? el.checked : d.type === 'num' ? (parseInt(el.value) || 0) : el.value;
@@ -1462,6 +1566,7 @@ function onHostMsg(rec, m) {
     rec.role = m.role === 'watch' ? 'watch' : 'player';
     rec.pid = str(m.pid, 40);
     rec.name = str(m.name, 24).trim();
+    rec.av = cleanAv(m.av);
     if (rec.role === 'player' && (!rec.pid || !rec.name)) { rec.role = null; return; }
     if (rec.role === 'player' && isBlocked(rec.pid)) {
       rec.role = null; send(rec, { type: 'kicked' });
@@ -1494,7 +1599,7 @@ function refreshPeers() {
   const seen = new Map(); let watch = 0;
   for (const r of conns.values()) {
     if (r.role === 'watch') watch++;
-    else if (r.role === 'player' && !seen.has(r.pid)) seen.set(r.pid, { pid: r.pid, name: r.name });
+    else if (r.role === 'player' && !seen.has(r.pid)) seen.set(r.pid, { pid: r.pid, name: r.name, av: r.av });
   }
   peersList = [...seen.values()]; watchers = watch;
   if (play && playGame()) {
@@ -1502,8 +1607,8 @@ function refreshPeers() {
     for (const x of peersList) {
       if (isBlocked(x.pid)) continue;
       const p = player(x.pid);
-      if (!p) { play.players.push({ id: x.pid, name: x.name, score: 0, remote: true }); changed = true; }
-      else if (p.name !== x.name) { p.name = x.name; changed = true; }
+      if (!p) { play.players.push({ id: x.pid, name: x.name, av: x.av, score: 0, remote: true }); changed = true; }
+      else if (p.name !== x.name || JSON.stringify(p.av) !== JSON.stringify(x.av)) { p.name = x.name; p.av = x.av; changed = true; }
     }
     if (changed) savePlay();
   }
@@ -1512,7 +1617,7 @@ function refreshPeers() {
 
 // ---------- Player networking ----------
 function sendHello() {
-  try { pconn?.send({ type: 'hello', pid: me.pid, name: me.watch ? '' : me.name, role: me.watch ? 'watch' : 'player' }); } catch {}
+  try { pconn?.send({ type: 'hello', pid: me.pid, name: me.watch ? '' : me.name, av: me.av, role: me.watch ? 'watch' : 'player' }); } catch {}
 }
 function openPlayerPeer() {
   return new Promise((resolve, reject) => {
