@@ -7,7 +7,7 @@
 <title>2MixParty!</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Anton&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Libre+Baskerville:wght@700&family=Luckiest+Guy&display=swap" rel="stylesheet">
 <style>
   :root {
     color-scheme: dark;
@@ -61,9 +61,18 @@
     display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
     padding: 10px 16px; border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .25);
   }
-  .logo { font-family: var(--display); letter-spacing: .04em; color: var(--accent); font-size: 30px; margin: 0; text-shadow: 2px 2px 0 #000; font-weight: 400; }
+  .logo { font-family: 'Luckiest Guy', var(--display); letter-spacing: .02em; color: var(--accent); font-size: 30px; margin: 0; font-weight: 400; line-height: 1.1; display: inline-flex; white-space: nowrap; }
   .logo.sm { font-size: 22px; }
-  .logo.big { font-size: clamp(44px, 12vw, 72px); text-align: center; }
+  .logo.big { font-size: clamp(48px, 12vw, 80px); justify-content: center; width: 100%; }
+  /* Party-game title: every letter its own colour, outlined, tilted and gently bobbing. */
+  .logo .l {
+    display: inline-block; color: var(--c);
+    -webkit-text-stroke: .07em #1f0d3f; paint-order: stroke fill;
+    text-shadow: 0 .07em 0 #1f0d3f, 0 .13em 0 rgba(0, 0, 0, .35);
+    transform: rotate(var(--r)) translateY(var(--y));
+    animation: bob 2.6s ease-in-out infinite; animation-delay: calc(var(--i) * -.18s);
+  }
+  @keyframes bob { 50% { transform: rotate(calc(var(--r) * -1)) translateY(calc(var(--y) - .06em)); } }
   .title-input { max-width: 420px; font-weight: 700; font-size: 17px; }
   .round-name { font-family: var(--display); color: var(--accent); font-size: 22px; letter-spacing: .03em; text-shadow: 2px 2px 0 #000; }
   .chip-live { font-size: 13px; padding: .25em .7em; border-radius: 999px; background: rgba(47, 191, 113, .18); color: #8ff0bd; border: 1px solid rgba(47, 191, 113, .4); white-space: nowrap; }
@@ -285,6 +294,17 @@
   .swatch { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .25); }
   .swatch.on { outline: 3px solid var(--accent); outline-offset: 2px; border-color: #fff; }
   @media (max-width: 720px) { .join-grid { grid-template-columns: 1fr; } }
+  .fx { position: fixed; inset: 0; width: 100%; height: 100%; pointer-events: none; z-index: 60; }
+  .tabs { display: flex; gap: 4px; padding: 10px 16px 0; border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .15); }
+  .tab { background: transparent; border: 1px solid transparent; border-bottom: 0; border-radius: 10px 10px 0 0; padding: .55em 1.2em; color: var(--muted); font-weight: 600; margin-bottom: -1px; }
+  .tab.on { background: var(--bg); border-color: var(--line); color: var(--text); }
+  .settings-page .section { max-width: 760px; }
+  .settings-list { display: flex; flex-direction: column; gap: 10px; margin-top: 12px; }
+  .setting { display: flex; gap: 14px; align-items: flex-start; background: rgba(0, 0, 0, .2); border: 1px solid var(--line); border-radius: 10px; padding: 12px 14px; cursor: pointer; }
+  .setting input[type=checkbox] { width: 20px; height: 20px; margin-top: 2px; flex: none; }
+  .setting input[type=number] { width: 90px; flex: none; }
+  .setting strong { display: block; }
+  .setting small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
   .player.away { opacity: .5; }
   button.pname { background: none; border: 0; padding: 0; width: 100%; font: inherit; font-size: 13px; cursor: pointer; }
   button.pname:hover { color: #fff; text-decoration: underline; }
@@ -377,6 +397,15 @@ const me = {
 };
 lsSet('jeoparty.pid', me.pid);
 
+// ---------- Title ----------
+const LOGO_COLORS = ['#ff4b4b', '#ffd23f', '#4cd964', '#3fa9ff', '#ff7ac8', '#ff9f1c', '#b77dff'];
+const LOGO_TILT = [-6, 4, -3, 7, -5, 3, -7, 5, -2, 8];
+function logoHtml(cls = '', tag = 'h1') {
+  const letters = [...'2MixParty!'].map((ch, i) =>
+    `<span class="l" style="--c:${LOGO_COLORS[i % LOGO_COLORS.length]};--r:${LOGO_TILT[i]}deg;--y:${i % 2 ? '-.04em' : '.03em'};--i:${i}">${ch}</span>`).join('');
+  return `<${tag} class="logo ${cls}" aria-label="2MixParty!">${letters}</${tag}>`;
+}
+
 // ---------- Avatars ----------
 // Players pick a hairstyle, hair colour, one accessory, a skin tone and a name colour (the shirt matches
 // the name). Every face is deliberately derpy. The host only accepts values from these lists, so nothing
@@ -384,14 +413,16 @@ lsSet('jeoparty.pid', me.pid);
 const AV = {
   hair: ['short', 'long', 'spiky', 'curly', 'bun', 'mohawk', 'bowl', 'clown', 'none'],
   hairColor: ['#3b2417', '#17111f', '#f2d16b', '#d2602e', '#b9b9c6', '#ff7ac8', '#5fe07a', '#4aa8ff', '#9b6bff'],
-  acc: ['none', 'glasses', 'sunglasses', 'partyhat', 'crown', 'headphones', 'bow', 'mustache'],
+  facial: ['none', 'mustache', 'beard', 'full', 'goatee', 'stubble'],
+  acc: ['none', 'glasses', 'sunglasses', 'partyhat', 'crown', 'headphones', 'bow'],
   skin: ['#f9dcc4', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'],
   color: ['#ffffff', '#ffa8d8', '#c9a8ff', '#7fd4ff', '#8ff0bd', '#ffe37a', '#ffb27a', '#ff8f93'],
 };
 const AV_LABEL = {
   hair: { short: 'Cowlick', long: 'Long', spiky: 'Spiky', curly: 'Curly', bun: 'Bun', mohawk: 'Mohawk', bowl: 'Bowl cut', clown: 'Clown', none: 'Bald' },
   hairColor: ['Brown', 'Black', 'Blonde', 'Ginger', 'Grey', 'Pink', 'Green', 'Blue', 'Purple'],
-  acc: { none: 'None', glasses: 'Glasses', sunglasses: 'Sunglasses', partyhat: 'Party hat', crown: 'Crown', headphones: 'Headphones', bow: 'Bow', mustache: 'Mustache' },
+  facial: { none: 'None', mustache: 'Mustache', beard: 'Beard', full: 'Beard & mustache', goatee: 'Goatee', stubble: 'Stubble' },
+  acc: { none: 'None', glasses: 'Glasses', sunglasses: 'Sunglasses', partyhat: 'Party hat', crown: 'Crown', headphones: 'Headphones', bow: 'Bow' },
 };
 const pickFrom = list => list[Math.floor(Math.random() * list.length)];
 function cleanAv(a) {
@@ -399,6 +430,8 @@ function cleanAv(a) {
   return {
     hair: AV.hair.includes(a.hair) ? a.hair : 'short',
     hairColor: AV.hairColor.includes(a.hairColor) ? a.hairColor : '#3b2417',
+    // (the mustache used to be an accessory; old avatars keep it as facial hair)
+    facial: AV.facial.includes(a.facial) ? a.facial : a.acc === 'mustache' ? 'mustache' : 'none',
     acc: AV.acc.includes(a.acc) ? a.acc : 'none',
     skin: AV.skin.includes(a.skin) ? a.skin : '#e0ac69',
     color: AV.color.includes(a.color) ? a.color : '#ffffff',
@@ -427,8 +460,16 @@ function avatarSvg(av, size = 36) {
     crown: `<path d="M11 11.5 L10.5 3.5 L15.5 7.5 L19.5 1.5 L24 7 L29.5 2.5 L29 11.5 Z" fill="#ffd34d" stroke="#b8860b" stroke-width=".6" transform="rotate(8 20 8)"/>`,
     headphones: `<path d="M8 21 Q8 6.5 20 6.5 Q32 6.5 32 21" fill="none" stroke="#ddd0fa" stroke-width="2"/><rect x="5" y="18" width="5" height="8" rx="2" fill="#ff8f93"/><rect x="30" y="18" width="5" height="8" rx="2" fill="#ff8f93"/>`,
     bow: `<g fill="#ff5fa8"><path d="M26 10.5 L32 6.5 L32 14.5 Z"/><path d="M26 10.5 L20 6.5 L20 14.5 Z"/><circle cx="26" cy="10.5" r="1.8"/></g>`,
-    mustache: `<path d="M14.8 26.6 Q17.8 24.4 20.5 26 Q23.2 24.4 26.2 26.6 Q27.5 28 26.8 28.6 Q24 26.6 20.5 27.4 Q17 26.6 14.2 28.6 Q13.5 28 14.8 26.6Z" fill="${H}"/>`,
   }[a.acc] || '';
+  const stache = `<path d="M14.8 26.6 Q17.8 24.4 20.5 26 Q23.2 24.4 26.2 26.6 Q27.5 28 26.8 28.6 Q24 26.6 20.5 27.4 Q17 26.6 14.2 28.6 Q13.5 28 14.8 26.6Z" fill="${H}"/>`;
+  const beard = `<path d="M8.8 21 Q9 33.8 20.2 34.2 Q31.2 33.8 31.2 21 Q30 26.5 27.6 28.2 Q26 32 20.3 32.2 Q14.4 32 12.8 28.6 Q10.2 26.8 8.8 21Z" fill="${H}"/>`;
+  const facial = {
+    mustache: stache,
+    beard,
+    full: beard + stache,
+    goatee: `<path d="M17.2 31 Q20.3 37.5 23.4 31 Q20.3 32.6 17.2 31Z" fill="${H}"/>`,
+    stubble: `<g fill="${H}" opacity=".55">${[[11, 26], [12.5, 28.6], [14.5, 30.6], [17, 32], [20, 32.6], [23, 32], [25.6, 30.6], [27.6, 28.6], [29, 26], [13, 25.3], [27.2, 25.3], [16, 29.8], [24.4, 29.8], [18.5, 31.4], [21.6, 31.4]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".55"/>`).join('')}</g>`,
+  }[a.facial] || '';
   // The derp: sticky-out ears, googly cross-eyes of two sizes, wonky brows, blob nose,
   // and a lopsided open grin with buck teeth and a tongue.
   return `<svg class="av" width="${size}" height="${size}" viewBox="0 -4 40 44" aria-hidden="true">
@@ -442,13 +483,13 @@ function avatarSvg(av, size = 36) {
     <path d="M14.6 27.2 Q20 33.4 26.4 26.4 Q20.5 29.2 14.6 27.2Z" fill="${ink}"/>
     <rect x="18.2" y="27.7" width="1.9" height="2.3" rx=".4" fill="#fff"/><rect x="20.3" y="27.6" width="1.9" height="2.5" rx=".4" fill="#fff"/>
     <ellipse cx="23" cy="29.4" rx="1.8" ry="1.1" fill="#ff6b8a"/>
-    ${front}${acc}</svg>`;
+    ${facial}${front}${acc}</svg>`;
 }
 // A player's name in their chosen colour (players added by the host without a device stay white).
 const nameHtml = p => `<span class="pn" style="color:${cleanAv(p?.av).color}">${esc(p?.name)}</span>`;
 
 // This device's avatar: remembered, or a random starting look the first time.
-me.av = cleanAv(lsGet('jeoparty.avatar', null) || { hair: pickFrom(AV.hair.slice(0, 8)), hairColor: pickFrom(AV.hairColor), acc: 'none', skin: pickFrom(AV.skin), color: pickFrom(AV.color) });
+me.av = cleanAv(lsGet('jeoparty.avatar', null) || { hair: pickFrom(AV.hair.slice(0, 8)), hairColor: pickFrom(AV.hairColor), facial: 'none', acc: 'none', skin: pickFrom(AV.skin), color: pickFrom(AV.color) });
 lsSet('jeoparty.avatar', me.av);
 
 // ---------- Model ----------
@@ -458,8 +499,22 @@ function newRound(name, mult = 1) {
   const values = [200, 400, 600, 800, 1000].map(v => v * mult);
   return { name, values, categories: Array.from({ length: 5 }, () => newCat(values.length)) };
 }
+// Game modifiers, set per game on the editor's Settings tab. Add new ones here with a default,
+// sanitise them in cleanSettings(), and give them a row in renderSettings().
+const DEFAULT_SETTINGS = { wrongCosts: true, dailyDoubles: true, effects: true, finalSeconds: 30 };
+function cleanSettings(x) {
+  x = x && typeof x === 'object' ? x : {};
+  const bool = (k) => typeof x[k] === 'boolean' ? x[k] : DEFAULT_SETTINGS[k];
+  return {
+    wrongCosts: bool('wrongCosts'),
+    dailyDoubles: bool('dailyDoubles'),
+    effects: bool('effects'),
+    finalSeconds: Math.min(300, Math.max(5, parseInt(x.finalSeconds) || DEFAULT_SETTINGS.finalSeconds)),
+  };
+}
+const S = () => cleanSettings(playGame()?.settings);
 function blankGame() {
-  return { id: uid(), created: Date.now(), title: 'Untitled game', rounds: [newRound('2MixParty!')], final: { enabled: true, category: '', q: '', a: '' } };
+  return { id: uid(), created: Date.now(), title: 'Untitled game', rounds: [newRound('2MixParty!')], final: { enabled: true, category: '', q: '', a: '' }, settings: { ...DEFAULT_SETTINGS } };
 }
 function normalize(g, id) {
   g = g && typeof g === 'object' ? g : {};
@@ -476,6 +531,7 @@ function normalize(g, id) {
   });
   const f = g.final || {};
   out.final = { enabled: f.enabled ?? true, category: String(f.category ?? ''), q: String(f.q ?? ''), a: String(f.a ?? '') };
+  out.settings = cleanSettings(g.settings);
   return out;
 }
 function sampleGame() {
@@ -556,7 +612,7 @@ function send(rec, msg) { try { if (rec.conn.open) rec.conn.send(msg); } catch {
 function buildLive() {
   const g = playGame();
   if (!g) return { phase: 'idle' };
-  const base = { title: g.title, players: play.players.map(({ id, name, av, score }) => ({ id, name, av: av || null, score, away: isAway(id) })) };
+  const base = { title: g.title, fx: play.fx || null, players: play.players.map(({ id, name, av, score }) => ({ id, name, av: av || null, score, away: isAway(id) })) };
   if (play.final) {
     const f = g.final, F = play.final;
     return { ...base, phase: 'final', final: {
@@ -564,6 +620,7 @@ function buildLive() {
       q: ['clue', 'reveal'].includes(F.stage) ? f.q : null,
       a: F.stage === 'reveal' ? f.a : null,
       timerEnd: F.stage === 'clue' ? (F.timerEnd || null) : null,
+      timerMs: F.timerMs || 30000,
       token: F.stage === 'wager' ? (F.token || null) : null,
       locked: F.stage === 'wager' ? Object.keys(F.submitted || {}) : [],
     } };
@@ -576,7 +633,7 @@ function buildLive() {
     const showQ = cl.stage === 'clue';
     out.clue = {
       token: cl.token, stage: cl.stage, cat: R.categories[cl.c].name, value: R.values[cl.i],
-      dd: !!clue.dd, ddName: cl.ddPlayer ? (player(cl.ddPlayer)?.name || '') : '',
+      dd: !!cl.dd, ddName: cl.ddPlayer ? (player(cl.ddPlayer)?.name || '') : '',
       wager: showQ && cl.ddPlayer ? cl.wager : null,
       q: showQ ? clue.q : null, a: cl.revealed ? clue.a : null, revealed: !!cl.revealed,
       open: !!cl.open, queue: cl.queue, lockout: cl.wrong,
@@ -644,6 +701,75 @@ function buzzSound(first = true) {
 }
 function soundButton() {
   return `<button class="ghost" data-act="toggle-sound" title="${muted ? 'Turn sound on' : 'Turn sound off'}" aria-pressed="${!muted}">${muted ? 'Sound off' : 'Sound on'}</button>`;
+}
+
+// ---------- Effects: confetti and falling skulls ----------
+// The host triggers them; the event rides along in the live state so every player and TV screen plays it too.
+const fxCanvas = document.createElement('canvas');
+fxCanvas.className = 'fx';
+fxCanvas.setAttribute('aria-hidden', 'true');
+document.body.appendChild(fxCanvas);
+const fxCtx = fxCanvas.getContext('2d');
+const FX_COLORS = ['#ff4b4b', '#ffd23f', '#4cd964', '#3fa9ff', '#ff7ac8', '#ff9f1c', '#b77dff', '#ffffff'];
+const reducedMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+let fxParts = [], fxRunning = false;
+function playFx(kind) {
+  const W = innerWidth, Hh = innerHeight, scale = reducedMotion() ? .3 : 1;
+  if (kind === 'confetti' || kind === 'both') {
+    for (const side of [0, 1]) for (let i = 0; i < 90 * scale; i++) {
+      fxParts.push({
+        kind: 'c', x: side ? W + 10 : -10, y: Hh * (.55 + Math.random() * .3),
+        vx: (side ? -1 : 1) * (5 + Math.random() * 11), vy: -(10 + Math.random() * 12),
+        rot: Math.random() * 6.3, vr: (Math.random() - .5) * .35,
+        w: 7 + Math.random() * 7, h: 4 + Math.random() * 4, color: pickFrom(FX_COLORS),
+      });
+    }
+  }
+  if (kind === 'skulls' || kind === 'both') {
+    for (let i = 0; i < 26 * scale; i++) {
+      fxParts.push({
+        kind: 's', x: Math.random() * W, y: -40 - Math.random() * Hh * .7,
+        vx: (Math.random() - .5) * 1.4, vy: 1.5 + Math.random() * 3,
+        rot: (Math.random() - .5) * .8, vr: (Math.random() - .5) * .07, size: 28 + Math.random() * 34,
+      });
+    }
+  }
+  if (!fxRunning) { fxRunning = true; requestAnimationFrame(stepFx); }
+}
+function stepFx() {
+  const dpr = devicePixelRatio || 1, W = innerWidth, Hh = innerHeight;
+  if (fxCanvas.width !== Math.round(W * dpr) || fxCanvas.height !== Math.round(Hh * dpr)) {
+    fxCanvas.width = Math.round(W * dpr); fxCanvas.height = Math.round(Hh * dpr);
+  }
+  fxCtx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  fxCtx.clearRect(0, 0, W, Hh);
+  fxParts = fxParts.filter(p => p.y < Hh + 80 && p.x > -120 && p.x < W + 120);
+  for (const p of fxParts) {
+    if (p.kind === 'c') { p.vx *= .985; p.vy = p.vy * .985 + .32; }
+    else p.vy += .09;
+    p.x += p.vx; p.y += p.vy; p.rot += p.vr;
+    fxCtx.save();
+    fxCtx.translate(p.x, p.y);
+    fxCtx.rotate(p.rot);
+    if (p.kind === 'c') {
+      fxCtx.scale(1, Math.cos(p.rot * 2.3)); // paper flipping over as it falls
+      fxCtx.fillStyle = p.color;
+      fxCtx.fillRect(-p.w / 2, -p.h / 2, p.w, p.h);
+    } else {
+      fxCtx.font = `${p.size}px "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji", sans-serif`;
+      fxCtx.textAlign = 'center'; fxCtx.textBaseline = 'middle';
+      fxCtx.fillText('💀', 0, 0);
+    }
+    fxCtx.restore();
+  }
+  if (fxParts.length) requestAnimationFrame(stepFx);
+  else { fxRunning = false; fxCtx.clearRect(0, 0, W, Hh); }
+}
+// Host: play an effect here and pass it on to every connected screen.
+function celebrate(kind) {
+  if (role !== 'host' || !play || !S().effects) return;
+  play.fx = { id: uid(), kind };
+  playFx(kind);
 }
 
 // ---------- Dialog + toast ----------
@@ -751,7 +877,7 @@ function gameStats(g) {
 function renderHome() {
   const inProgress = playGame();
   return `
-  <header class="top"><h1 class="logo">2MixParty!</h1><span class="spacer"></span>${connectedChip()}
+  <header class="top">${logoHtml()}<span class="spacer"></span>${connectedChip()}
     <button class="ghost" data-act="invite">Invite players</button>
     <button class="ghost" data-act="fullscreen">⛶ Fullscreen</button></header>
   <main class="home">
@@ -818,7 +944,11 @@ function renderEditor() {
     <span class="meta hide-sm">Saved automatically</span>
     <button class="primary" data-act="setup" data-id="${g.id}">▶ Play</button>
   </header>
-  <main class="editor">
+  <nav class="tabs" role="tablist">
+    <button role="tab" class="tab ${view.tab !== 'settings' ? 'on' : ''}" aria-selected="${view.tab !== 'settings'}" data-act="ed-tab" data-t="questions">Questions</button>
+    <button role="tab" class="tab ${view.tab === 'settings' ? 'on' : ''}" aria-selected="${view.tab === 'settings'}" data-act="ed-tab" data-t="settings">Settings</button>
+  </nav>
+  ${view.tab === 'settings' ? renderSettings(g) : `<main class="editor">
     <p class="hint">Write each clue as a statement. The correct response is shown to you (the host) only, and to players once you reveal it. Empty clues appear as blank tiles on the board.</p>
     ${rounds}
     <div><button data-act="add-round">+ Add round</button></div>
@@ -829,6 +959,27 @@ function renderEditor() {
         <label for="f-cat">Category</label><input id="f-cat" data-path="final.category" value="${esc(g.final.category)}" placeholder="Category">
         <label for="f-q">Clue</label><textarea id="f-q" data-path="final.q" rows="3" placeholder="Clue">${esc(g.final.q)}</textarea>
         <label for="f-a">Correct response</label><input id="f-a" data-path="final.a" value="${esc(g.final.a)}" placeholder="Correct response">
+      </div>
+    </section>
+  </main>`}`;
+}
+
+function renderSettings(g) {
+  const st = cleanSettings(g.settings);
+  const toggle = (k, title, desc) => `<label class="setting" for="set-${k}">
+      <input id="set-${k}" type="checkbox" data-path="settings.${k}" ${st[k] ? 'checked' : ''}>
+      <span><strong>${title}</strong><small>${desc}</small></span></label>`;
+  return `<main class="editor settings-page">
+    <section class="section">
+      <div class="section-head"><h2>Game modifiers</h2></div>
+      <p class="hint">These apply every time this game is played, and take effect straight away, even mid-game.</p>
+      <div class="settings-list">
+        ${toggle('wrongCosts', 'Wrong answers lose points', "A wrong answer takes away the clue's value, or the Daily Double wager. Turn off for a friendlier game.")}
+        ${toggle('dailyDoubles', 'Daily Doubles', 'When off, clues marked as Daily Doubles play like normal clues.')}
+        ${toggle('effects', 'Confetti & skulls', 'Confetti when someone scores and skulls raining down when a clue is missed, on every screen.')}
+        <label class="setting" for="set-finalSeconds">
+          <input id="set-finalSeconds" type="number" min="5" max="300" step="5" data-type="num" data-path="settings.finalSeconds" value="${st.finalSeconds}">
+          <span><strong>Final 2MixParty! timer</strong><small>How many seconds the timer gives players to answer the final clue (5 to 300).</small></span></label>
       </div>
     </section>
   </main>`;
@@ -951,7 +1102,7 @@ function renderOverlay() {
     <div class="judge">${judges.map(p => { const w = vc.wrong.includes(p.id), qi = vc.queue.indexOf(p.id); return `
       <div class="jrow ${w ? 'wrong' : ''} ${qi === 0 && !w ? 'first' : ''}">${qi >= 0 ? `<span class="pos">${qi + 1}</span>` : ''}${avatarSvg(p.av, 28)}<span class="who">${nameHtml(p)}</span>
         <button class="ok" data-act="right" data-p="${p.id}" ${w ? 'disabled' : ''} title="Correct">✓ ${fmt(worth)}</button>
-        <button class="no" data-act="wrong" data-p="${p.id}" ${w ? 'disabled' : ''} title="Incorrect">✗ ${fmt(-worth)}</button></div>`; }).join('')}
+        <button class="no" data-act="wrong" data-p="${p.id}" ${w ? 'disabled' : ''} title="Incorrect">✗ ${S().wrongCosts ? fmt(-worth) : 'Wrong'}</button></div>`; }).join('')}
     </div>
     <div class="actions">
       ${vc.revealed ? '' : `<button data-act="reveal">Show response to players<kbd>Space</kbd></button>`}
@@ -961,7 +1112,8 @@ function renderOverlay() {
   </div>`;
 }
 
-function timerBar(end, total = 30000) {
+function timerBar(end, total) {
+  total = total || 30000;
   const left = end ? end - Date.now() : 0;
   if (left <= 0) return end ? `<div class="timer"><div style="width:0"></div></div>` : '';
   return `<div class="timer"><div style="animation-duration:${total}ms;animation-delay:-${Math.max(0, total - left)}ms"></div></div>`;
@@ -1002,10 +1154,10 @@ function renderFinal() {
     body = `<div class="clue-card">
       <div class="clue-meta center">${esc(f.category)}</div>
       <div class="clue-text">${esc(f.q)}</div>
-      ${timerBar(F.timerEnd)}
+      ${timerBar(F.timerEnd, F.timerMs)}
       <div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${esc(f.a) || '<em>(none entered)</em>'}</div>
       <div class="actions">
-        <button data-act="f-timer">${F.timerEnd ? 'Restart' : 'Start'} 30s timer</button>
+        <button data-act="f-timer">${F.timerEnd ? 'Restart' : 'Start'} ${S().finalSeconds}s timer</button>
         <button class="primary" data-act="f-reveal">Reveal response<kbd>Space</kbd></button>
       </div></div>`;
   } else if (F.stage === 'reveal') {
@@ -1049,7 +1201,7 @@ function buzzState() {
 function renderPlayer() {
   if (me.kicked) {
     return `<div class="player-join" style="text-align:center">
-      <h1 class="logo big">2MixParty!</h1>
+      ${logoHtml('big')}
       <p class="round-name">You were removed from the game</p>
       <p class="muted">The host removed you from room ${esc(me.code)}. If that was a mistake, ask them to allow you back, then try again.</p>
       <button class="primary big" data-act="p-retry">Try to join again</button>
@@ -1059,7 +1211,7 @@ function renderPlayer() {
     const opt = (k, v, preview, label) => `<button class="av-opt ${me.av[k] === v ? 'on' : ''}" data-act="av-set" data-k="${k}" data-v="${v}" title="${label}" aria-label="${label}" aria-pressed="${me.av[k] === v}">${preview}</button>`;
     const swatch = (k, v, label) => `<button class="swatch ${me.av[k] === v ? 'on' : ''}" style="background:${v}" data-act="av-set" data-k="${k}" data-v="${v}" title="${label}" aria-label="${label}" aria-pressed="${me.av[k] === v}"></button>`;
     return `<div class="player-join wide">
-      <h1 class="logo big">2MixParty!</h1>
+      ${logoHtml('big')}
       <p class="muted" style="text-align:center">Join a game on this device. No account needed.</p>
       <div class="join-grid">
         <div class="join-form">
@@ -1078,6 +1230,8 @@ function renderPlayer() {
           <div class="av-opts">${AV.hair.map(h => opt('hair', h, avatarSvg({ ...me.av, hair: h, acc: 'none' }, 31), AV_LABEL.hair[h])).join('')}</div>
           <p class="label">Hair colour</p>
           <div class="av-opts">${AV.hairColor.map((c, i) => swatch('hairColor', c, `${AV_LABEL.hairColor[i]} hair`)).join('')}</div>
+          <p class="label">Facial hair</p>
+          <div class="av-opts">${AV.facial.map(x => opt('facial', x, avatarSvg({ ...me.av, facial: x, acc: 'none' }, 31), AV_LABEL.facial[x])).join('')}</div>
           <p class="label">Accessory</p>
           <div class="av-opts">${AV.acc.map(x => opt('acc', x, avatarSvg({ ...me.av, acc: x }, 31), AV_LABEL.acc[x])).join('')}</div>
           <p class="label">Skin tone</p>
@@ -1115,7 +1269,7 @@ function renderPlayer() {
   const banner = pstate === 'lost' ? `<div class="conn-banner">Connection to the host lost. Reconnecting…</div>` : '';
   return `<div class="pview">
     <header class="top">
-      <span class="logo sm">2MixParty!</span>
+      ${logoHtml('sm', 'span')}
       ${L?.round && L.phase === 'board' ? `<span class="muted hide-sm">${esc(L.round.name)}</span>` : ''}
       <span class="spacer"></span>
       <span class="you-chip">${me.watch ? 'Watching' : `${avatarSvg(me.av, 24)}${nameHtml(me)}${you ? ` · ${fmt(you.score)}` : ''}`}</span>
@@ -1137,7 +1291,7 @@ function playerFinal(L) {
       <p class="label">The category is</p><div class="final-cat">${esc(F.category)}</div>
       ${F.stage === 'wager' ? playerWager(L, F) : ''}`;
   else inner = `<div class="clue-meta center">${esc(F.category)}</div><div class="clue-text">${esc(F.q)}</div>
-      ${F.stage === 'clue' ? timerBar(F.timerEnd) : `<div class="answer">${esc(F.a || '')}</div>`}`;
+      ${F.stage === 'clue' ? timerBar(F.timerEnd, F.timerMs) : `<div class="answer">${esc(F.a || '')}</div>`}`;
   return `<div class="clue-stage">${inner}</div>`;
 }
 
@@ -1199,7 +1353,8 @@ const actions = {
     render();
   },
   new() { const g = blankGame(); games.push(g); touch(); view = { name: 'edit', gameId: g.id }; render(); },
-  edit(d) { view = { name: 'edit', gameId: d.id }; render(); },
+  edit(d) { view = { name: 'edit', gameId: d.id, tab: 'questions' }; render(); },
+  'ed-tab'(d) { view.tab = d.t; render(); },
   dup(d) {
     const g = clone(gameById(d.id));
     g.id = uid(); g.title += ' (copy)'; g.created = Date.now();
@@ -1273,7 +1428,8 @@ const actions = {
   // Board
   open(d) {
     const clue = playGame().rounds[play.round].categories[+d.c].clues[+d.i];
-    play.clue = { token: uid(), r: play.round, c: +d.c, i: +d.i, stage: clue.dd ? 'dd' : 'clue', revealed: false, wrong: [], queue: [], open: !clue.dd };
+    const dd = !!clue.dd && S().dailyDoubles;
+    play.clue = { token: uid(), r: play.round, c: +d.c, i: +d.i, dd, stage: dd ? 'dd' : 'clue', revealed: false, wrong: [], queue: [], open: !dd };
     savePlay(); render();
   },
   'dd-pick'(d) { play.clue.ddPlayer = d.p; play.clue.err = ''; savePlay(); render(); },
@@ -1287,10 +1443,11 @@ const actions = {
     savePlay(); render();
   },
   reveal() { play.clue.revealed = true; play.clue.open = false; savePlay(); render(); },
-  right(d) { adjust(d.p, clueWorth()); markUsed(); },
+  right(d) { adjust(d.p, clueWorth()); celebrate('confetti'); markUsed(); },
   wrong(d) {
     const vc = play.clue;
-    adjust(d.p, -clueWorth());
+    adjust(d.p, S().wrongCosts ? -clueWorth() : 0);
+    celebrate('skulls');
     if (vc.ddPlayer) return markUsed();
     vc.wrong.push(d.p);
     vc.queue = vc.queue.filter(x => x !== d.p);
@@ -1299,7 +1456,7 @@ const actions = {
   },
   'toggle-buzz'() { play.clue.open = !play.clue.open; savePlay(); render(); },
   'reset-buzz'() { play.clue.queue = []; play.clue.token = uid(); play.clue.open = true; savePlay(); render(); },
-  'clue-done'() { markUsed(); },
+  'clue-done'() { celebrate('skulls'); markUsed(); },
   'clue-cancel'() { play.clue = null; savePlay(); render(); },
   undo() {
     const e = play.log.pop();
@@ -1340,8 +1497,9 @@ const actions = {
   },
   'f-timer'() {
     clearTimeout(beepTimer);
-    play.final.timerEnd = Date.now() + 30000;
-    beepTimer = setTimeout(() => beep(), 30000);
+    const ms = S().finalSeconds * 1000;
+    play.final.timerEnd = Date.now() + ms; play.final.timerMs = ms;
+    beepTimer = setTimeout(() => beep(), ms);
     savePlay(); render();
   },
   'f-reveal'() { clearTimeout(beepTimer); play.final.stage = 'reveal'; savePlay(); render(); },
@@ -1350,6 +1508,8 @@ const actions = {
     const F = play.final;
     if (F.applied) return;
     for (const p of play.players.filter(p => p.id in F.results)) adjust(p.id, (F.results[p.id] ? 1 : -1) * (F.wagers[p.id] || 0));
+    const results = Object.values(F.results);
+    if (results.length) celebrate(results.includes(true) ? (results.includes(false) ? 'both' : 'confetti') : 'skulls');
     F.applied = true; F.stage = 'results'; savePlay(); render();
   },
   rematch() {
@@ -1721,9 +1881,12 @@ setInterval(() => {
 }, HEARTBEAT_MS);
 // Say goodbye when the tab closes so the host doesn't wait for the timeout.
 window.addEventListener('pagehide', () => { try { pconn?.send({ type: 'bye' }); } catch {} });
-let lastToken = null, lastQueueLen = 0;
+let lastToken = null, lastQueueLen = 0, lastFxId; // lastFxId stays undefined until the first state
 function onLive(state) {
   live = state;
+  const fx = live?.fx;
+  if (fx && fx.id !== lastFxId && lastFxId !== undefined && ['confetti', 'skulls', 'both'].includes(fx.kind)) playFx(fx.kind);
+  lastFxId = fx?.id ?? null;
   const tok = live?.clue?.token || null, qLen = live?.clue?.queue?.length || 0;
   if (tok && me.buzzToken && tok !== me.buzzToken) me.buzzToken = null;
   // TV screens ring for every buzz; players only hear their own (played when they press).
