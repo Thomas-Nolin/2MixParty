@@ -267,6 +267,14 @@
   .qr img, .qr canvas { display: block; width: 200px; height: 200px; }
   .join-link { font-family: ui-monospace, Consolas, monospace; font-size: 13px; background: rgba(0, 0, 0, .3); padding: .5em .8em; border-radius: 8px; overflow-wrap: anywhere; user-select: all; max-width: 100%; }
   .code-input { font-family: var(--display); font-size: 28px; letter-spacing: .2em; text-transform: uppercase; text-align: center; }
+  .player.away { opacity: .5; }
+  button.pname { background: none; border: 0; padding: 0; width: 100%; font: inherit; font-size: 13px; cursor: pointer; }
+  button.pname:hover { color: #fff; text-decoration: underline; }
+  .remote-list span { display: inline-flex; align-items: center; gap: 4px; }
+  .remote-list span .icon { padding: 0 .3em; color: var(--muted); }
+  .remote-list span .icon:hover { color: #ff9a9d; }
+  .remote-list .blocked { opacity: .75; text-decoration: line-through; }
+  .remote-list .blocked .icon { text-decoration: none; font-size: 12px; color: var(--accent); }
   .conn-banner { background: #3a1d24; color: #ffc1c3; text-align: center; padding: 8px 16px; font-weight: 600; }
   .conn-banner.ok { background: rgba(47, 191, 113, .18); color: #8ff0bd; }
   .linkish { background: none; border: 0; color: var(--muted); text-decoration: underline; padding: 0; }
@@ -456,7 +464,7 @@ function send(rec, msg) { try { if (rec.conn.open) rec.conn.send(msg); } catch {
 function buildLive() {
   const g = playGame();
   if (!g) return { phase: 'idle' };
-  const base = { title: g.title, players: play.players.map(({ id, name, score }) => ({ id, name, score })) };
+  const base = { title: g.title, players: play.players.map(({ id, name, score }) => ({ id, name, score, away: isAway(id) })) };
   if (play.final) {
     const f = g.final, F = play.final;
     return { ...base, phase: 'final', final: {
@@ -547,6 +555,20 @@ function soundButton() {
 }
 
 // ---------- Dialog + toast ----------
+// A dialog with several choices; resolves the chosen key, or null when dismissed.
+function choose(message, buttons) {
+  return new Promise(resolve => {
+    const d = $('#dialog');
+    d.innerHTML = `<div class="dlg" role="dialog" aria-modal="true" aria-label="${esc(message)}">
+      <p>${esc(message)}</p>
+      <div class="actions">${buttons.map(b => `<button class="${b.cls || ''}" data-dlg="${esc(b.key)}">${esc(b.label)}</button>`).join('')}</div></div>`;
+    d.hidden = false;
+    d.querySelector('[data-dlg]').focus();
+    const done = v => { d.hidden = true; d.innerHTML = ''; d.onclick = d.onkeydown = null; resolve(v); };
+    d.onclick = e => { const b = e.target.closest('[data-dlg]'); if (b) done(b.dataset.dlg); else if (e.target === d) done(null); };
+    d.onkeydown = e => { if (e.key === 'Escape') done(null); e.stopPropagation(); };
+  });
+}
 function ask(message, { ok = 'OK', cancel = 'Cancel', input = null, danger = false } = {}) {
   return new Promise(resolve => {
     const d = $('#dialog');
@@ -731,8 +753,10 @@ function renderSetup() {
   <main class="panel">
     <h2>Who's playing?</h2>
     <h3>Joined on their devices</h3>
-    ${peersList.length ? `<div class="remote-list">${peersList.map(p => `<span>${esc(p.name)}</span>`).join('')}</div>`
+    ${peersList.length ? `<div class="remote-list">${peersList.map(p => `<span>${esc(p.name)}<button class="icon" data-act="kick" data-p="${esc(p.pid)}" title="Remove ${esc(p.name)}" aria-label="Remove ${esc(p.name)}">✕</button></span>`).join('')}</div>`
       : `<p class="hint">No one yet. Players can also join after the game starts.</p>`}
+    ${blocked.length ? `<h3>Removed players</h3><p class="hint">They can't rejoin until you let them back in.</p>
+      <div class="remote-list">${blocked.map(b => `<span class="blocked">${esc(b.name)}<button class="icon" data-act="unblock" data-p="${esc(b.pid)}">Allow back</button></span>`).join('')}</div>` : ''}
     <div class="row" style="margin-top:10px"><button data-act="invite">Show QR code & room code</button></div>
     <h3>Players without a device</h3>
     <div class="plist">${view.players.map((n, i) => `
@@ -759,11 +783,15 @@ function boardCells(info, interactive) {
   return cells;
 }
 
+// A player who joined on a device but isn't connected right now (keeps their score; can rejoin).
+const isAway = pid => !!player(pid)?.remote && !peersList.some(x => x.pid === pid);
+
 function scoresBar(players, { host = false, you = null } = {}) {
   return `<footer class="scores">
-    ${players.map(p => `<div class="player ${p.score < 0 ? 'neg' : ''} ${p.id === you ? 'you' : ''}">
-      <div class="pname">${esc(p.name)}${p.id === you ? ' (you)' : ''}</div>
-      ${host ? `<button class="pscore" data-act="edit-score" data-p="${p.id}" title="Click to edit score">${fmt(p.score)}</button>` : `<div class="pscore">${fmt(p.score)}</div>`}</div>`).join('')}
+    ${players.map(p => { const away = host ? isAway(p.id) : p.away; return `<div class="player ${p.score < 0 ? 'neg' : ''} ${p.id === you ? 'you' : ''} ${away ? 'away' : ''}">
+      ${host ? `<button class="pname" data-act="player-menu" data-p="${p.id}" title="Set score or remove ${esc(p.name)}">${esc(p.name)}${away ? ' · away' : ''} ▾</button>`
+        : `<div class="pname">${esc(p.name)}${p.id === you ? ' (you)' : ''}${away ? ' · away' : ''}</div>`}
+      ${host ? `<button class="pscore" data-act="edit-score" data-p="${p.id}" title="Click to edit score">${fmt(p.score)}</button>` : `<div class="pscore">${fmt(p.score)}</div>`}</div>`; }).join('')}
     ${host ? `<button class="ghost undo" data-act="undo" ${play.log.length ? '' : 'disabled'} title="Undo last score change">↶ Undo</button>` : ''}
   </footer>`;
 }
@@ -929,6 +957,14 @@ function buzzState() {
 }
 
 function renderPlayer() {
+  if (me.kicked) {
+    return `<div class="player-join" style="text-align:center">
+      <h1 class="logo big">2MixParty!</h1>
+      <p class="round-name">You were removed from the game</p>
+      <p class="muted">The host removed you from room ${esc(me.code)}. If that was a mistake, ask them to allow you back, then try again.</p>
+      <button class="primary big" data-act="p-retry">Try to join again</button>
+    </div>`;
+  }
   if (!me.joined) {
     return `<div class="player-join">
       <h1 class="logo big">2MixParty!</h1>
@@ -1216,6 +1252,32 @@ const actions = {
   'p-join'() { joinAs(false); },
   'p-watch'() { joinAs(true); },
   'p-leave'() { me.joined = false; render(); },
+  'p-retry'() { me.kicked = false; me.joined = true; live = null; pstate = 'connecting'; connectPlayer(); render(); },
+  async 'player-menu'(d) {
+    const p = player(d.p);
+    if (!p) return;
+    const pick = await choose(`${p.name} · ${fmt(p.score)}`, [
+      { key: 'score', label: 'Set score' },
+      { key: 'remove', label: 'Remove from game', cls: 'dangerbtn' },
+      { key: 'cancel', label: 'Cancel' },
+    ]);
+    if (pick === 'score') actions['edit-score'](d);
+    else if (pick === 'remove') actions.kick(d);
+  },
+  async kick(d) {
+    const pid = d.p;
+    const name = player(pid)?.name || peersList.find(p => p.pid === pid)?.name || 'this player';
+    const remote = !!player(pid)?.remote || peersList.some(p => p.pid === pid);
+    const msg = `Remove ${name} from the game?` + (remote ? ' Their device is disconnected, and they can’t rejoin until you allow them back from the setup screen.' : ' Their score will be lost.');
+    if (!await ask(msg, { ok: 'Remove', danger: true })) return;
+    removePlayer(pid);
+    render();
+  },
+  unblock(d) {
+    blocked = blocked.filter(b => b.pid !== d.p);
+    lsSet('jeoparty.blocked', blocked);
+    render();
+  },
   'p-wager'() {
     const F = live?.final, you = live?.players?.find(p => p.id === me.pid);
     if (!F || F.stage !== 'wager' || !F.token || !you || !pconn) return;
@@ -1344,21 +1406,68 @@ function startHost(attempt = 0) {
     }
   });
 }
+// A closed phone or browser often never says goodbye, so both sides check in every few seconds
+// and the host drops anyone it hasn't heard from in HEARTBEAT_TIMEOUT.
+const HEARTBEAT_MS = 3000, HEARTBEAT_TIMEOUT = 12000;
+function dropConn(rec) {
+  for (const [id, r] of conns) if (r === rec) conns.delete(id);
+  try { rec.conn.close(); } catch {}
+  refreshPeers();
+}
+setInterval(() => {
+  if (role !== 'host') return;
+  const now = Date.now();
+  for (const rec of [...conns.values()]) {
+    if (now - rec.lastSeen > HEARTBEAT_TIMEOUT) dropConn(rec);
+    else send(rec, { type: 'ping' });
+  }
+}, HEARTBEAT_MS);
+
+// Players the host removed; they can't rejoin until allowed back from the setup screen.
+let blocked = lsGet('jeoparty.blocked', []);
+const isBlocked = pid => blocked.some(b => b.pid === pid);
+function removePlayer(pid) {
+  const name = player(pid)?.name || peersList.find(p => p.pid === pid)?.name || 'Player';
+  const remote = !!player(pid)?.remote || peersList.some(p => p.pid === pid);
+  if (remote && !isBlocked(pid)) { blocked.push({ pid, name }); lsSet('jeoparty.blocked', blocked); }
+  if (play) {
+    play.players = play.players.filter(p => p.id !== pid);
+    const cl = play.clue;
+    if (cl) {
+      if (cl.ddPlayer === pid) play.clue = null;
+      else { cl.queue = cl.queue.filter(x => x !== pid); cl.wrong = cl.wrong.filter(x => x !== pid); }
+    }
+    const F = play.final;
+    if (F) { delete F.wagers?.[pid]; delete F.submitted?.[pid]; delete F.results?.[pid]; }
+    savePlay();
+  }
+  for (const rec of [...conns.values()]) {
+    if (rec.pid === pid) { rec.role = null; send(rec, { type: 'kicked' }); setTimeout(() => dropConn(rec), 300); }
+  }
+  refreshPeers();
+}
+
 function setupHostConn(conn) {
-  const rec = { conn, pid: null, name: '', role: null };
+  const rec = { conn, pid: null, name: '', role: null, lastSeen: Date.now() };
   conns.set(conn.connectionId, rec);
-  conn.on('data', m => onHostMsg(rec, m));
+  conn.on('data', m => { rec.lastSeen = Date.now(); onHostMsg(rec, m); });
   const drop = () => { if (conns.get(conn.connectionId) === rec) { conns.delete(conn.connectionId); refreshPeers(); } };
   conn.on('close', drop);
   conn.on('error', drop);
 }
 function onHostMsg(rec, m) {
   if (!m || typeof m !== 'object') return;
+  if (m.type === 'bye') { dropConn(rec); return; }
   if (m.type === 'hello') {
     rec.role = m.role === 'watch' ? 'watch' : 'player';
     rec.pid = str(m.pid, 40);
     rec.name = str(m.name, 24).trim();
     if (rec.role === 'player' && (!rec.pid || !rec.name)) { rec.role = null; return; }
+    if (rec.role === 'player' && isBlocked(rec.pid)) {
+      rec.role = null; send(rec, { type: 'kicked' });
+      setTimeout(() => dropConn(rec), 300);
+      return;
+    }
     for (const [id, r] of conns) {
       if (r !== rec && r.pid && r.pid === rec.pid) { conns.delete(id); try { r.conn.close(); } catch {} }
     }
@@ -1391,6 +1500,7 @@ function refreshPeers() {
   if (play && playGame()) {
     let changed = false;
     for (const x of peersList) {
+      if (isBlocked(x.pid)) continue;
       const p = player(x.pid);
       if (!p) { play.players.push({ id: x.pid, name: x.name, score: 0, remote: true }); changed = true; }
       else if (p.name !== x.name) { p.name = x.name; changed = true; }
@@ -1446,7 +1556,13 @@ async function connectPlayer() {
     });
     pconn = c;
     pstate = 'connected';
-    c.on('data', m => { if (m && m.type === 'state' && m.state && typeof m.state === 'object') onLive(m.state); });
+    lastHostMsg = Date.now();
+    c.on('data', m => {
+      lastHostMsg = Date.now();
+      if (!m || typeof m !== 'object') return;
+      if (m.type === 'state' && m.state && typeof m.state === 'object') onLive(m.state);
+      else if (m.type === 'kicked') onKicked();
+    });
     const lost = () => { if (pconn === c) { pconn = null; pstate = 'lost'; refresh(); scheduleRetry(); } };
     c.on('close', lost);
     c.on('error', lost);
@@ -1461,8 +1577,29 @@ async function connectPlayer() {
 }
 function scheduleRetry() {
   clearTimeout(retryTimer);
-  retryTimer = setTimeout(() => { if (me.joined) connectPlayer(); }, 3000);
+  retryTimer = setTimeout(() => { if (me.joined && !me.kicked) connectPlayer(); }, 3000);
 }
+function onKicked() {
+  me.kicked = true; me.joined = false; live = null;
+  clearTimeout(retryTimer);
+  const c = pconn; pconn = null; pstate = 'idle';
+  try { c?.close(); } catch {}
+  render();
+}
+// Check in with the host; if the host goes quiet (tab closed, network dropped), reconnect.
+let lastHostMsg = 0;
+setInterval(() => {
+  if (role !== 'player' || !pconn || pstate !== 'connected') return;
+  if (Date.now() - lastHostMsg > HEARTBEAT_TIMEOUT) {
+    const c = pconn; pconn = null; pstate = 'lost';
+    try { c.close(); } catch {}
+    refresh(); connectPlayer();
+    return;
+  }
+  try { pconn.send({ type: 'ping' }); } catch {}
+}, HEARTBEAT_MS);
+// Say goodbye when the tab closes so the host doesn't wait for the timeout.
+window.addEventListener('pagehide', () => { try { pconn?.send({ type: 'bye' }); } catch {} });
 let lastToken = null, lastQueueLen = 0;
 function onLive(state) {
   live = state;
