@@ -1,0 +1,810 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>2MixParty!</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Anton&family=Libre+Baskerville:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #120a24;
+    --panel: #1d1238;
+    --panel2: #2b1c52;
+    --board: #34207a;
+    --board-dk: #241453;
+    --accent: #ffa8d8;
+    --text: #eef1ff;
+    --muted: #a797cc;
+    --line: rgba(255, 255, 255, .14);
+    --ok: #1f9d5c;
+    --no: #d93b40;
+    --display: 'Anton', Impact, 'Arial Narrow', sans-serif;
+    --serif: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.45 system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  }
+  button {
+    font: inherit; cursor: pointer; color: var(--text);
+    background: var(--panel2); border: 1px solid var(--line);
+    padding: .5em .9em; border-radius: 8px;
+  }
+  button:hover:not(:disabled) { border-color: rgba(255, 255, 255, .4); }
+  button:disabled { opacity: .4; cursor: default; }
+  button.primary { background: var(--accent); color: #1f0d3f; border-color: transparent; font-weight: 700; }
+  button.ghost { background: transparent; }
+  button.danger { color: #ff9a9d; }
+  button.icon { background: transparent; padding: .25em .55em; }
+  input, textarea {
+    font: inherit; color: var(--text); width: 100%;
+    background: rgba(0, 0, 0, .28); border: 1px solid var(--line);
+    border-radius: 6px; padding: .45em .6em;
+  }
+  input:focus, textarea:focus { outline: 2px solid var(--accent); outline-offset: -1px; }
+  input[type=checkbox] { width: auto; accent-color: var(--accent); }
+  kbd { font-size: .75em; border: 1px solid currentColor; border-radius: 4px; padding: 0 .35em; opacity: .7; margin-left: .4em; }
+  .spacer { flex: 1; }
+  .muted { color: var(--muted); }
+
+  .top {
+    display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    padding: 10px 16px; border-bottom: 1px solid var(--line); background: rgba(0, 0, 0, .25);
+  }
+  .logo { font-family: var(--display); letter-spacing: .04em; color: var(--accent); font-size: 30px; margin: 0; text-shadow: 2px 2px 0 #000; font-weight: 400; }
+  .title-input { max-width: 420px; font-weight: 700; font-size: 17px; }
+  .round-name { font-family: var(--display); color: var(--accent); font-size: 22px; letter-spacing: .03em; text-shadow: 2px 2px 0 #000; }
+
+  /* Home */
+  .home { max-width: 1000px; margin: 0 auto; padding: 24px 16px 48px; }
+  .toolbar { display: flex; gap: 8px; flex-wrap: wrap; margin: 8px 0 20px; }
+  .resume {
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+    background: var(--board-dk); border: 1px solid var(--accent); border-radius: 12px; padding: 14px 16px; margin-bottom: 20px;
+  }
+  .game-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(270px, 1fr)); gap: 12px; }
+  .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 10px; }
+  .card h3 { margin: 0; font-size: 18px; overflow-wrap: anywhere; }
+  .meta { color: var(--muted); font-size: 13px; }
+  .row { display: flex; flex-wrap: wrap; gap: 6px; }
+  .empty-state { text-align: center; padding: 40px 16px; color: var(--muted); }
+
+  /* Editor */
+  .editor { padding: 16px; display: flex; flex-direction: column; gap: 20px; }
+  .section { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; padding: 14px; }
+  .section-head { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+  .section-head input { max-width: 280px; font-weight: 700; }
+  .section-head h2 { margin: 0; font-size: 17px; }
+  .grid-wrap { overflow-x: auto; }
+  .ed-grid { border-collapse: separate; border-spacing: 6px; }
+  .ed-grid th, .ed-grid td { vertical-align: top; min-width: 210px; padding: 0; }
+  .ed-grid .valcol { min-width: 120px; width: 120px; }
+  .valcell { display: flex; gap: 2px; align-items: center; }
+  .cat-h { display: flex; gap: 4px; }
+  .cat-h input { font-weight: 700; text-transform: uppercase; background: var(--board-dk); }
+  .cell-ed { display: flex; flex-direction: column; gap: 4px; background: rgba(52, 32, 122, .35); padding: 6px; border-radius: 8px; border: 1px solid var(--line); }
+  .cell-ed.dd { border-color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+  .cell-ed textarea { resize: vertical; min-height: 66px; }
+  .dd-toggle { font-size: 12px; color: var(--muted); display: flex; gap: 6px; align-items: center; cursor: pointer; user-select: none; }
+  .final-ed { display: grid; gap: 8px; max-width: 720px; }
+  .final-ed label { font-size: 13px; color: var(--muted); }
+  .hint { font-size: 13px; color: var(--muted); margin: 0; }
+
+  /* Setup / panels */
+  .panel { max-width: 560px; margin: 32px auto; padding: 0 16px; }
+  .panel h2 { font-family: var(--display); font-weight: 400; color: var(--accent); font-size: 30px; margin: 0 0 16px; letter-spacing: .03em; }
+  .plist { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+  .plist .prow { display: flex; gap: 6px; align-items: center; }
+
+  /* Board */
+  .board-view { height: 100vh; height: 100dvh; display: grid; grid-template-rows: auto 1fr auto; }
+  .board {
+    display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr);
+    gap: 6px; padding: 8px; background: #0a0515; min-height: 0; position: relative;
+  }
+  .board .cat {
+    background: var(--board); display: flex; align-items: center; justify-content: center; text-align: center;
+    padding: 6px; font-family: var(--display); text-transform: uppercase; color: #fff;
+    font-size: clamp(12px, 1.9vw, 28px); line-height: 1.1; text-shadow: 2px 2px 0 #000; overflow: hidden;
+    border-bottom: 4px solid #0a0515; overflow-wrap: anywhere;
+  }
+  .board .cell {
+    background: var(--board); border: 0; border-radius: 0; padding: 0;
+    font-family: var(--display); color: var(--accent); font-size: clamp(18px, 4.4vw, 60px); text-shadow: 3px 3px 0 #000;
+    transition: filter .15s;
+  }
+  .board .cell:hover:not(:disabled) { filter: brightness(1.3); border: 0; }
+  .board .cell:disabled { opacity: 1; }
+  .round-done {
+    position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+    background: rgba(0, 0, 0, .85); border: 2px solid var(--accent); border-radius: 14px; padding: 22px 28px; text-align: center;
+  }
+  .round-done p { font-family: var(--display); color: var(--accent); font-size: 30px; margin: 0 0 12px; }
+  .scores { display: flex; gap: 8px; padding: 8px; overflow-x: auto; background: #0a0515; align-items: stretch; }
+  .player { flex: 1 1 0; min-width: 120px; background: var(--board-dk); border-radius: 6px; text-align: center; padding: 6px 8px; }
+  .pname { font-size: 13px; text-transform: uppercase; letter-spacing: .06em; color: #ddd0fa; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .pscore { font-family: var(--display); font-size: clamp(20px, 2.6vw, 34px); color: #fff; background: none; border: 0; padding: 0; line-height: 1.2; }
+  .player.neg .pscore { color: #ff8f93; }
+  .scores .undo { align-self: center; white-space: nowrap; }
+
+  /* Clue overlay */
+  #overlay {
+    position: fixed; inset: 0; z-index: 10; background: var(--board);
+    display: flex; align-items: center; justify-content: center; padding: 16px;
+    animation: zoom .28s ease-out;
+  }
+  #overlay[hidden] { display: none; }
+  @keyframes zoom { from { transform: scale(.2); opacity: 0; } to { transform: none; opacity: 1; } }
+  .clue-card { width: min(1150px, 100%); max-height: 100%; overflow: auto; display: flex; flex-direction: column; gap: 22px; text-align: center; padding: 4px; }
+  .clue-meta { display: flex; justify-content: space-between; gap: 12px; flex-wrap: wrap; font-family: var(--display); text-transform: uppercase; color: var(--accent); font-size: clamp(16px, 2vw, 26px); letter-spacing: .03em; }
+  .clue-text { font-family: var(--serif); text-transform: uppercase; font-size: clamp(22px, 4vw, 56px); line-height: 1.3; text-shadow: 3px 3px 0 #000; white-space: pre-wrap; overflow-wrap: anywhere; }
+  .answer { font-family: var(--serif); color: var(--accent); font-size: clamp(18px, 2.8vw, 38px); text-shadow: 2px 2px 0 #000; white-space: pre-wrap; animation: fade .3s; }
+  @keyframes fade { from { opacity: 0; transform: translateY(6px); } }
+  .reveal { align-self: center; font-size: 18px; background: rgba(0, 0, 0, .3); }
+  .judge { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .jrow { display: flex; align-items: center; gap: 6px; background: rgba(0, 0, 0, .3); padding: 6px 6px 6px 14px; border-radius: 10px; }
+  .jrow.wrong { opacity: .45; }
+  .jrow .who { font-weight: 700; margin-right: 4px; }
+  button.ok { background: var(--ok); border-color: transparent; color: #fff; }
+  button.no { background: var(--no); border-color: transparent; color: #fff; }
+  button.ok.on { outline: 3px solid #fff; }
+  button.no.on { outline: 3px solid #fff; }
+  .actions { display: flex; gap: 8px; justify-content: center; flex-wrap: wrap; }
+  .actions button { background: rgba(0, 0, 0, .3); }
+  .actions button.primary { background: var(--accent); }
+  .dd-title { font-family: var(--display); color: var(--accent); font-size: clamp(44px, 9vw, 120px); line-height: 1; text-shadow: 4px 4px 0 #000; animation: pop .6s cubic-bezier(.2, 1.6, .4, 1); }
+  @keyframes pop { from { transform: scale(0) rotate(-12deg); } }
+  .pick { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; }
+  .chip { background: rgba(0, 0, 0, .3); }
+  .chip.on { background: var(--accent); color: #1f0d3f; font-weight: 700; }
+  .chip small { opacity: .75; margin-left: 4px; }
+  .wager { max-width: 220px; align-self: center; font-size: 22px; text-align: center; }
+  .err { color: #ffb3b5; min-height: 1.2em; font-weight: 600; }
+  .label { margin: 0; color: #ddd0fa; }
+
+  /* Final */
+  .final-view { min-height: 100vh; min-height: 100dvh; background: var(--board); display: flex; flex-direction: column; }
+  .final-view .top { background: rgba(0, 0, 0, .3); }
+  .final-body { flex: 1; display: flex; align-items: center; justify-content: center; padding: 20px 16px; }
+  .final-cat { font-family: var(--display); font-size: clamp(28px, 5vw, 64px); text-transform: uppercase; text-shadow: 3px 3px 0 #000; }
+  .wtable { display: flex; flex-direction: column; gap: 8px; width: min(560px, 100%); align-self: center; text-align: left; }
+  .wrow { display: grid; grid-template-columns: 1fr auto 150px; gap: 10px; align-items: center; background: rgba(0, 0, 0, .3); padding: 8px 12px; border-radius: 10px; }
+  .wrow.judge-row { grid-template-columns: 1fr auto auto auto; }
+  .timer { height: 10px; background: rgba(0, 0, 0, .4); border-radius: 5px; overflow: hidden; width: min(600px, 100%); align-self: center; }
+  .timer div { height: 100%; background: var(--accent); animation-name: drain; animation-timing-function: linear; animation-fill-mode: forwards; }
+  @keyframes drain { from { width: 100%; } to { width: 0; } }
+  .podium { display: flex; flex-direction: column; gap: 8px; width: min(560px, 100%); align-self: center; }
+  .prow-r { display: flex; justify-content: space-between; align-items: center; background: rgba(0, 0, 0, .3); padding: 12px 16px; border-radius: 10px; font-size: 20px; }
+  .prow-r.win { background: var(--accent); color: #1f0d3f; font-weight: 700; }
+  .prow-r .s { font-family: var(--display); font-size: 28px; }
+
+  @media (max-width: 600px) {
+    .board { gap: 3px; padding: 4px; }
+    .board .cat { border-bottom-width: 2px; padding: 3px; }
+    .wrow { grid-template-columns: 1fr 110px; }
+    .wrow .sc { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="app"></div>
+<div id="overlay" hidden></div>
+<input type="file" id="file" accept=".json,application/json" hidden>
+
+<script>
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const uid = () => Math.random().toString(36).slice(2, 10);
+const fmt = n => (n < 0 ? '-' : '') + '$' + Math.abs(n).toLocaleString();
+const LS_GAMES = 'jeoparty.games', LS_PLAY = 'jeoparty.play';
+
+function load(k, d) { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } }
+function store(k, v) { try { localStorage.setItem(k, JSON.stringify(v)); } catch {} }
+const saveGames = () => store(LS_GAMES, games);
+const savePlay = () => store(LS_PLAY, play);
+
+// ---------- Model ----------
+const blankClue = () => ({ q: '', a: '', dd: false });
+const newCat = rows => ({ name: '', clues: Array.from({ length: rows }, blankClue) });
+function newRound(name, mult = 1) {
+  const values = [200, 400, 600, 800, 1000].map(v => v * mult);
+  return { name, values, categories: Array.from({ length: 5 }, () => newCat(values.length)) };
+}
+function blankGame() {
+  return { id: uid(), title: 'Untitled game', rounds: [newRound('2MixParty!')], final: { enabled: true, category: '', q: '', a: '' } };
+}
+function normalize(g) {
+  g = g && typeof g === 'object' ? g : {};
+  g.id = uid();
+  g.title = String(g.title ?? 'Imported game');
+  if (!Array.isArray(g.rounds) || !g.rounds.length) g.rounds = [newRound('2MixParty!')];
+  g.rounds = g.rounds.map((R, ri) => {
+    const values = Array.isArray(R?.values) && R.values.length ? R.values.map(v => parseInt(v) || 0) : [200, 400, 600, 800, 1000];
+    const categories = (Array.isArray(R?.categories) ? R.categories : []).map(C => {
+      const clues = Array.isArray(C?.clues) ? C.clues.slice(0, values.length) : [];
+      while (clues.length < values.length) clues.push(blankClue());
+      return { name: String(C?.name ?? ''), clues: clues.map(x => ({ q: String(x?.q ?? ''), a: String(x?.a ?? ''), dd: !!x?.dd })) };
+    });
+    return { name: String(R?.name ?? `Round ${ri + 1}`), values, categories };
+  });
+  const f = g.final || {};
+  g.final = { enabled: f.enabled ?? true, category: String(f.category ?? ''), q: String(f.q ?? ''), a: String(f.a ?? '') };
+  return g;
+}
+
+function sampleGame() {
+  const cats = [
+    ['Science', [
+      ['Known as the Red Planet, it\'s fourth from the Sun', 'What is Mars?'],
+      ['H₂O is the chemical formula for this', 'What is water?'],
+      ['This force keeps your feet on the ground', 'What is gravity?'],
+      ['Often called the powerhouse of the cell', 'What is the mitochondria?'],
+      ['He published the general theory of relativity in 1915', 'Who is Albert Einstein?']]],
+    ['World Geography', [
+      ['The longest river in Africa', 'What is the Nile?'],
+      ['Machu Picchu sits high in the Andes of this country', 'What is Peru?'],
+      ['Not Sydney, this city is Australia\'s capital', 'What is Canberra?'],
+      ['The smallest country in the world by area', 'What is Vatican City?', true],
+      ['This narrow strait separates Spain from Morocco', 'What is the Strait of Gibraltar?']]],
+    ['Movies', [
+      ['"May the Force be with you" comes from this franchise', 'What is Star Wars?'],
+      ['Jack and Rose meet aboard a doomed ship in this 1997 film', 'What is Titanic?'],
+      ['Dorothy\'s little dog in "The Wizard of Oz"', 'Who is Toto?'],
+      ['He directed both "E.T." and "Jurassic Park"', 'Who is Steven Spielberg?'],
+      ['In 1991 it became the first animated film nominated for Best Picture', 'What is Beauty and the Beast?']]],
+    ['Food & Drink', [
+      ['The main ingredient in guacamole', 'What is avocado?'],
+      ['True Champagne must come from this country', 'What is France?'],
+      ['Japanese dish of thinly sliced raw fish served without rice', 'What is sashimi?'],
+      ['Harvested from crocus flowers, it\'s the priciest spice by weight', 'What is saffron?'],
+      ['This hearty Hungarian stew is seasoned with plenty of paprika', 'What is goulash?']]],
+    ['Wordplay', [
+      ['A word that reads the same forwards and backwards, like "level"', 'What is a palindrome?'],
+      ['Rearrange the letters of "listen" to get this word meaning quiet', 'What is silent?'],
+      ['"Bat" and "bark" are examples of these same-spelled, different-meaning words', 'What are homonyms?'],
+      ['"I\'ve told you a million times" is an example of this exaggeration', 'What is hyperbole?'],
+      ['"The quick brown fox jumps over the lazy dog" is one of these', 'What is a pangram?']]],
+  ];
+  return {
+    id: uid(), title: 'Sample Game',
+    rounds: [{ name: '2MixParty!', values: [200, 400, 600, 800, 1000],
+      categories: cats.map(([name, cl]) => ({ name, clues: cl.map(([q, a, dd]) => ({ q, a, dd: !!dd })) })) }],
+    final: { enabled: true, category: 'Famous Landmarks', q: 'This iron tower was built as the entrance arch to the 1889 World\'s Fair', a: 'What is the Eiffel Tower?' },
+  };
+}
+
+let games = load(LS_GAMES, null);
+if (!Array.isArray(games)) { games = [sampleGame()]; saveGames(); }
+let play = load(LS_PLAY, null);
+if (play && !games.some(g => g.id === play.gameId)) { play = null; savePlay(); }
+let view = { name: 'home' };
+let timer = null; // { start, ms, handle }
+
+const gameById = id => games.find(g => g.id === id);
+const editGame = () => gameById(view.gameId);
+const playGame = () => gameById(play.gameId);
+const player = id => play.players.find(p => p.id === id);
+const filled = clue => clue.q.trim() !== '';
+
+function setPath(obj, path, val) {
+  const k = path.split('.');
+  let o = obj;
+  for (let i = 0; i < k.length - 1; i++) o = o[k[i]];
+  o[k[k.length - 1]] = val;
+}
+function adjust(pid, delta) {
+  const p = player(pid);
+  if (!p || !delta) return;
+  p.score += delta;
+  play.log.push({ pid, delta });
+  savePlay();
+}
+function roundComplete() {
+  const R = playGame().rounds[play.round];
+  return R.categories.every((C, c) => C.clues.every((cl, i) => !filled(cl) || play.used[`${play.round}-${c}-${i}`]));
+}
+function newPlay(gameId, names) {
+  return { gameId, players: names.map(name => ({ id: uid(), name, score: 0 })), round: 0, used: {}, log: [], final: null };
+}
+function stopTimer() { if (timer) clearTimeout(timer.handle); timer = null; }
+function beep() {
+  try {
+    const a = new (window.AudioContext || window.webkitAudioContext)();
+    const o = a.createOscillator(), g = a.createGain();
+    o.frequency.value = 523; o.connect(g); g.connect(a.destination);
+    g.gain.setValueAtTime(.25, a.currentTime); g.gain.exponentialRampToValueAtTime(.001, a.currentTime + 1.2);
+    o.start(); o.stop(a.currentTime + 1.2);
+  } catch {}
+}
+
+// ---------- Views ----------
+function render() {
+  const app = $('#app');
+  if (view.name === 'home') app.innerHTML = renderHome();
+  else if (view.name === 'edit') app.innerHTML = renderEditor();
+  else if (view.name === 'setup') app.innerHTML = renderSetup();
+  else if (view.name === 'board') app.innerHTML = renderBoard();
+  else if (view.name === 'final') app.innerHTML = renderFinal();
+  renderOverlay();
+}
+
+function gameStats(g) {
+  let n = 0, total = 0;
+  g.rounds.forEach(R => R.categories.forEach(C => C.clues.forEach(cl => { total++; if (filled(cl)) n++; })));
+  return `${g.rounds.length} round${g.rounds.length > 1 ? 's' : ''} · ${n}/${total} clues${g.final.enabled ? ' · Final' : ''}`;
+}
+
+function renderHome() {
+  const inProgress = play && playGame();
+  return `
+  <header class="top"><h1 class="logo">2MixParty!</h1><span class="spacer"></span><button class="ghost" data-act="fullscreen">⛶ Fullscreen</button></header>
+  <main class="home">
+    ${inProgress ? `<div class="resume"><div><strong>Game in progress:</strong> ${esc(playGame().title)}<div class="meta">${play.players.map(p => `${esc(p.name)} ${fmt(p.score)}`).join(' · ')}</div></div>
+      <span class="spacer"></span><button class="ghost" data-act="abandon">Abandon</button><button class="primary" data-act="resume">Resume ▶</button></div>` : ''}
+    <div class="toolbar">
+      <button class="primary" data-act="new">+ New game</button>
+      <button data-act="import">Import JSON</button>
+    </div>
+    ${games.length ? `<div class="game-list">${games.map(g => `
+      <div class="card">
+        <h3>${esc(g.title) || '<em>Untitled</em>'}</h3>
+        <div class="meta">${gameStats(g)}</div>
+        <div class="row">
+          <button class="primary" data-act="setup" data-id="${g.id}">▶ Play</button>
+          <button data-act="edit" data-id="${g.id}">Edit</button>
+          <button class="ghost" data-act="dup" data-id="${g.id}">Duplicate</button>
+          <button class="ghost" data-act="export" data-id="${g.id}">Export</button>
+          <button class="ghost danger" data-act="del" data-id="${g.id}">Delete</button>
+        </div>
+      </div>`).join('')}</div>`
+    : `<div class="empty-state">No games yet. Create one or import a JSON file.</div>`}
+  </main>`;
+}
+
+function renderEditor() {
+  const g = editGame();
+  const rounds = g.rounds.map((R, r) => `
+    <section class="section">
+      <div class="section-head">
+        <input data-path="rounds.${r}.name" value="${esc(R.name)}" placeholder="Round name" aria-label="Round name">
+        <button data-act="add-cat" data-r="${r}">+ Category</button>
+        <button data-act="add-row" data-r="${r}">+ Row</button>
+        <span class="spacer"></span>
+        ${g.rounds.length > 1 ? `<button class="ghost danger" data-act="del-round" data-r="${r}">Delete round</button>` : ''}
+      </div>
+      <div class="grid-wrap"><table class="ed-grid">
+        <thead><tr><th class="valcol"></th>${R.categories.map((C, c) => `
+          <th><div class="cat-h"><input data-path="rounds.${r}.categories.${c}.name" value="${esc(C.name)}" placeholder="Category ${c + 1}">
+          <button class="icon" title="Remove category" data-act="del-cat" data-r="${r}" data-c="${c}">✕</button></div></th>`).join('')}
+        </tr></thead>
+        <tbody>${R.values.map((v, i) => `<tr>
+          <td class="valcol"><div class="valcell"><input type="number" step="100" data-type="num" data-path="rounds.${r}.values.${i}" value="${v}" aria-label="Row value">
+            <button class="icon" title="Remove row" data-act="del-row" data-r="${r}" data-i="${i}">✕</button></div></td>
+          ${R.categories.map((C, c) => { const cl = C.clues[i], p = `rounds.${r}.categories.${c}.clues.${i}`; return `
+          <td><div class="cell-ed ${cl.dd ? 'dd' : ''}">
+            <textarea data-path="${p}.q" placeholder="Clue">${esc(cl.q)}</textarea>
+            <input data-path="${p}.a" value="${esc(cl.a)}" placeholder="Correct response">
+            <label class="dd-toggle"><input type="checkbox" data-path="${p}.dd" ${cl.dd ? 'checked' : ''}> Daily Double</label>
+          </div></td>`; }).join('')}
+        </tr>`).join('')}</tbody>
+      </table></div>
+    </section>`).join('');
+  return `
+  <header class="top">
+    <button class="ghost" data-act="home">← Games</button>
+    <input class="title-input" data-path="title" value="${esc(g.title)}" placeholder="Game title" aria-label="Game title">
+    <span class="spacer"></span>
+    <span class="meta">Saved automatically</span>
+    <button class="primary" data-act="setup" data-id="${g.id}">▶ Play</button>
+  </header>
+  <main class="editor">
+    <p class="hint">Write each clue as a statement; the correct response is shown to the host when revealed. Empty clues appear as blank tiles on the board.</p>
+    ${rounds}
+    <div><button data-act="add-round">+ Add round</button></div>
+    <section class="section">
+      <div class="section-head"><h2>Final 2MixParty!</h2>
+        <label class="dd-toggle"><input type="checkbox" data-path="final.enabled" ${g.final.enabled ? 'checked' : ''}> Include</label></div>
+      <div class="final-ed">
+        <label>Category</label><input data-path="final.category" value="${esc(g.final.category)}" placeholder="Category">
+        <label>Clue</label><textarea data-path="final.q" rows="3" placeholder="Clue">${esc(g.final.q)}</textarea>
+        <label>Correct response</label><input data-path="final.a" value="${esc(g.final.a)}" placeholder="Correct response">
+      </div>
+    </section>
+  </main>`;
+}
+
+function renderSetup() {
+  const g = gameById(view.gameId);
+  return `
+  <header class="top"><button class="ghost" data-act="home">← Games</button><strong>${esc(g.title)}</strong></header>
+  <main class="panel">
+    <h2>Who's playing?</h2>
+    <div class="plist">${view.players.map((n, i) => `
+      <div class="prow"><input data-pname="${i}" value="${esc(n)}" placeholder="Player or team name">
+      ${view.players.length > 1 ? `<button class="icon" title="Remove" data-act="del-player" data-i="${i}">✕</button>` : ''}</div>`).join('')}
+    </div>
+    <div class="row">
+      ${view.players.length < 10 ? `<button data-act="add-player">+ Add player</button>` : ''}
+      <span class="spacer"></span>
+      <button class="primary" data-act="start">Start game ▶</button>
+    </div>
+    ${play ? `<p class="hint" style="margin-top:16px">Starting will replace the game currently in progress.</p>` : ''}
+  </main>`;
+}
+
+function renderBoard() {
+  const g = playGame(), r = play.round, R = g.rounds[r];
+  const last = r === g.rounds.length - 1;
+  const nextLabel = last ? (g.final.enabled ? 'Final 2MixParty! →' : 'Finish game →') : 'Next round →';
+  let cells = R.categories.map(C => `<div class="cat">${esc(C.name)}</div>`).join('');
+  R.values.forEach((v, i) => R.categories.forEach((C, c) => {
+    const hide = play.used[`${r}-${c}-${i}`] || !filled(C.clues[i]);
+    cells += `<button class="cell" data-act="open" data-c="${c}" data-i="${i}" ${hide ? 'disabled aria-label="used"' : ''}>${hide ? '' : fmt(v)}</button>`;
+  }));
+  return `
+  <div class="board-view">
+    <header class="top">
+      <button class="ghost" data-act="home">☰ Games</button>
+      <span class="round-name">${esc(R.name)}</span>
+      <span class="spacer"></span>
+      <button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button>
+      ${r > 0 ? `<button class="ghost" data-act="prev-round">← Prev round</button>` : ''}
+      <button data-act="next-round">${nextLabel}</button>
+    </header>
+    <main class="board" style="--cols:${Math.max(R.categories.length, 1)}">
+      ${cells}
+      ${R.categories.length && roundComplete() ? `<div class="round-done"><p>Round complete!</p><button class="primary" data-act="next-round">${nextLabel}</button></div>` : ''}
+    </main>
+    <footer class="scores">
+      ${play.players.map(p => `<div class="player ${p.score < 0 ? 'neg' : ''}">
+        <div class="pname">${esc(p.name)}</div>
+        <button class="pscore" data-act="edit-score" data-p="${p.id}" title="Click to edit score">${fmt(p.score)}</button></div>`).join('')}
+      <button class="ghost undo" data-act="undo" ${play.log.length ? '' : 'disabled'} title="Undo last score change">↶ Undo</button>
+    </footer>
+  </div>`;
+}
+
+function renderOverlay() {
+  const ov = $('#overlay');
+  if (view.name !== 'board' || !view.clue) { ov.hidden = true; ov.innerHTML = ''; return; }
+  const wasHidden = ov.hidden;
+  ov.hidden = false;
+  if (wasHidden) { ov.style.animation = 'none'; ov.offsetHeight; ov.style.animation = ''; }
+  const vc = view.clue, g = playGame(), R = g.rounds[vc.r], C = R.categories[vc.c], clue = C.clues[vc.i], value = R.values[vc.i];
+
+  if (vc.stage === 'dd') {
+    const p = vc.ddPlayer && player(vc.ddPlayer);
+    const maxW = p ? Math.max(p.score, Math.max(...R.values)) : 0;
+    ov.innerHTML = `<div class="clue-card">
+      <div class="dd-title">DAILY DOUBLE!</div>
+      <div class="clue-meta" style="justify-content:center">${esc(C.name)}</div>
+      <p class="label">Who found it?</p>
+      <div class="pick">${play.players.map(p => `<button class="chip ${vc.ddPlayer === p.id ? 'on' : ''}" data-act="dd-pick" data-p="${p.id}">${esc(p.name)}<small>${fmt(p.score)}</small></button>`).join('')}</div>
+      ${p ? `<p class="label">Wager (up to ${fmt(maxW)})</p><input type="number" class="wager" data-ddwager min="0" max="${maxW}" value="${vc.wager ?? ''}" autofocus>` : ''}
+      <div class="err">${esc(vc.err || '')}</div>
+      <div class="actions"><button data-act="clue-cancel">Back to board</button><button class="primary" data-act="dd-go">Show clue →</button></div>
+    </div>`;
+    const w = ov.querySelector('.wager'); if (w) w.focus();
+    return;
+  }
+
+  const dd = !!vc.ddPlayer, worth = dd ? vc.wager : value;
+  const judges = dd ? [player(vc.ddPlayer)] : play.players;
+  ov.innerHTML = `<div class="clue-card">
+    <div class="clue-meta"><span>${esc(C.name)}</span><span>${dd ? `Daily Double · ${esc(player(vc.ddPlayer).name)} wagers ${fmt(worth)}` : fmt(value)}</span></div>
+    <div class="clue-text">${esc(clue.q)}</div>
+    ${vc.revealed ? `<div class="answer">${clue.a.trim() ? esc(clue.a) : '<em>(no response entered)</em>'}</div>`
+      : `<button class="reveal" data-act="reveal">Reveal response<kbd>Space</kbd></button>`}
+    <div class="judge">${judges.map(p => { const w = vc.wrong.includes(p.id); return `
+      <div class="jrow ${w ? 'wrong' : ''}"><span class="who">${esc(p.name)}</span>
+        <button class="ok" data-act="right" data-p="${p.id}" ${w ? 'disabled' : ''} title="Correct">✓ ${fmt(worth)}</button>
+        <button class="no" data-act="wrong" data-p="${p.id}" ${w ? 'disabled' : ''} title="Incorrect">✗ ${fmt(-worth)}</button></div>`; }).join('')}
+    </div>
+    <div class="actions">
+      ${dd ? '' : `<button data-act="clue-cancel">Back to board<kbd>Esc</kbd></button>`}
+      ${dd ? '' : `<button class="primary" data-act="clue-done">No one got it — close</button>`}
+    </div>
+  </div>`;
+}
+
+function renderFinal() {
+  const g = playGame(), f = g.final, F = play.final;
+  const head = `<header class="top">
+      ${F.applied ? `<button class="ghost" data-act="home">☰ Games</button>` : `<button class="ghost" data-act="back-board">← Board</button>`}
+      <span class="round-name">${F.stage === 'results' ? 'Final Scores' : 'Final 2MixParty!'}</span>
+      <span class="spacer"></span><button class="ghost" data-act="fullscreen" title="Fullscreen">⛶</button></header>`;
+  let body = '';
+  const eligible = p => p.score > 0;
+
+  if (F.stage === 'category') {
+    body = `<div class="clue-card">
+      <div class="dd-title" style="font-size:clamp(36px,7vw,90px)">Final 2MixParty!</div>
+      <p class="label">The category is…</p>
+      <div class="final-cat">${esc(f.category) || '—'}</div>
+      <div class="actions"><button class="primary" data-act="f-wagers">Enter wagers →</button></div></div>`;
+  } else if (F.stage === 'wager') {
+    body = `<div class="clue-card">
+      <div class="clue-meta" style="justify-content:center">${esc(f.category)}</div>
+      <p class="label">Players with a positive score may wager up to their total.</p>
+      <div class="wtable">${play.players.map(p => `<div class="wrow"><strong>${esc(p.name)}</strong><span class="sc muted">${fmt(p.score)}</span>
+        ${eligible(p) ? `<input type="number" min="0" max="${p.score}" data-fwager="${p.id}" value="${F.wagers[p.id] ?? ''}" placeholder="Wager">` : `<span class="muted">Not eligible</span>`}</div>`).join('')}
+      </div>
+      <div class="err">${esc(F.err || '')}</div>
+      <div class="actions"><button class="primary" data-act="f-clue">Show clue →</button></div></div>`;
+  } else if (F.stage === 'clue') {
+    const bar = timer ? `<div class="timer"><div style="animation-duration:${timer.ms}ms;animation-delay:-${Date.now() - timer.start}ms"></div></div>` : '';
+    body = `<div class="clue-card">
+      <div class="clue-meta" style="justify-content:center">${esc(f.category)}</div>
+      <div class="clue-text">${esc(f.q)}</div>
+      ${bar}
+      <div class="actions">
+        <button data-act="f-timer">${timer ? 'Restart' : 'Start'} 30s timer</button>
+        <button class="primary" data-act="f-reveal">Reveal response<kbd>Space</kbd></button>
+      </div></div>`;
+  } else if (F.stage === 'reveal') {
+    const players = play.players.filter(eligible);
+    const allJudged = players.every(p => p.id in F.results);
+    body = `<div class="clue-card">
+      <div class="clue-meta" style="justify-content:center">${esc(f.category)}</div>
+      <div class="clue-text" style="font-size:clamp(18px,2.6vw,34px)">${esc(f.q)}</div>
+      <div class="answer">${esc(f.a) || '<em>(no response entered)</em>'}</div>
+      <div class="wtable">${players.length ? players.map(p => { const res = F.results[p.id]; return `<div class="wrow judge-row">
+        <strong>${esc(p.name)}</strong><span class="muted">wagered ${fmt(F.wagers[p.id] || 0)}</span>
+        <button class="ok ${res === true ? 'on' : ''}" data-act="f-judge" data-p="${p.id}" data-v="1">✓</button>
+        <button class="no ${res === false ? 'on' : ''}" data-act="f-judge" data-p="${p.id}" data-v="0">✗</button></div>`; }).join('')
+        : `<p class="label" style="text-align:center">No players were eligible for Final 2MixParty.</p>`}
+      </div>
+      <div class="actions"><button class="primary" data-act="f-apply" ${allJudged ? '' : 'disabled'}>Final scores →</button></div></div>`;
+  } else {
+    const ranked = [...play.players].sort((a, b) => b.score - a.score);
+    const top = ranked[0]?.score;
+    body = `<div class="clue-card">
+      <div class="dd-title" style="font-size:clamp(34px,6vw,80px)">${ranked.filter(p => p.score === top).length > 1 ? "It's a tie!" : `${esc(ranked[0].name)} wins!`}</div>
+      <div class="podium">${ranked.map(p => `<div class="prow-r ${p.score === top ? 'win' : ''}"><span>${p.score === top ? '👑 ' : ''}${esc(p.name)}</span><span class="s">${fmt(p.score)}</span></div>`).join('')}</div>
+      <div class="actions"><button data-act="home">Back to games</button><button class="primary" data-act="rematch">Play again ↻</button></div></div>`;
+  }
+  return `<div class="final-view">${head}<main class="final-body">${body}</main></div>`;
+}
+
+// ---------- Actions ----------
+function goFinal() {
+  const f = playGame().final;
+  play.final = f.enabled && f.q.trim() ? { stage: 'category', wagers: {}, results: {}, applied: false } : { stage: 'results', applied: true };
+  savePlay();
+  view = { name: 'final' };
+  render();
+}
+function markUsed() {
+  const { r, c, i } = view.clue;
+  play.used[`${r}-${c}-${i}`] = true;
+  view.clue = null;
+  savePlay();
+  render();
+}
+function download(name, text) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
+  a.download = name;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+
+const actions = {
+  home() { stopTimer(); view = { name: 'home' }; render(); },
+  fullscreen() {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen?.().catch(() => {});
+  },
+  new() { const g = blankGame(); games.push(g); saveGames(); view = { name: 'edit', gameId: g.id }; render(); },
+  edit(d) { view = { name: 'edit', gameId: d.id }; render(); },
+  dup(d) {
+    const g = structuredClone(gameById(d.id));
+    g.id = uid(); g.title += ' (copy)';
+    games.splice(games.findIndex(x => x.id === d.id) + 1, 0, g);
+    saveGames(); render();
+  },
+  del(d) {
+    const g = gameById(d.id);
+    if (!confirm(`Delete "${g.title}"? This can't be undone.`)) return;
+    games = games.filter(x => x.id !== d.id);
+    if (play?.gameId === d.id) { play = null; savePlay(); }
+    saveGames(); render();
+  },
+  export(d) {
+    const g = gameById(d.id);
+    const { id, ...data } = g;
+    download(`${(g.title || 'game').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'game'}.json`, JSON.stringify(data, null, 2));
+  },
+  import() { $('#file').value = ''; $('#file').click(); },
+  resume() { view = { name: play.final ? 'final' : 'board' }; render(); },
+  abandon() { if (!confirm('Abandon the game in progress?')) return; play = null; savePlay(); render(); },
+
+  // Editor
+  'add-cat'(d) { const R = editGame().rounds[+d.r]; R.categories.push(newCat(R.values.length)); saveGames(); render(); },
+  'del-cat'(d) {
+    const R = editGame().rounds[+d.r], C = R.categories[+d.c];
+    if ((C.name || C.clues.some(filled)) && !confirm(`Remove category "${C.name || 'untitled'}" and its clues?`)) return;
+    R.categories.splice(+d.c, 1); saveGames(); render();
+  },
+  'add-row'(d) {
+    const R = editGame().rounds[+d.r], v = R.values;
+    v.push(v.length ? v[v.length - 1] + (v.length > 1 ? v[v.length - 1] - v[v.length - 2] : v[0]) : 200);
+    R.categories.forEach(C => C.clues.push(blankClue()));
+    saveGames(); render();
+  },
+  'del-row'(d) {
+    const R = editGame().rounds[+d.r], i = +d.i;
+    if (R.categories.some(C => filled(C.clues[i])) && !confirm(`Remove the ${fmt(R.values[i])} row and its clues?`)) return;
+    R.values.splice(i, 1); R.categories.forEach(C => C.clues.splice(i, 1));
+    saveGames(); render();
+  },
+  'add-round'() {
+    const g = editGame(), n = g.rounds.length + 1;
+    g.rounds.push(newRound(n === 2 ? 'Double 2MixParty!' : `Round ${n}`, n));
+    saveGames(); render();
+  },
+  'del-round'(d) {
+    const g = editGame();
+    if (!confirm(`Delete round "${g.rounds[+d.r].name}" and all its clues?`)) return;
+    g.rounds.splice(+d.r, 1); saveGames(); render();
+  },
+
+  // Setup
+  setup(d) {
+    const prev = play && play.gameId === d.id ? play.players.map(p => p.name) : null;
+    view = { name: 'setup', gameId: d.id, players: prev || ['Player 1', 'Player 2', 'Player 3'] };
+    render();
+  },
+  'add-player'() { view.players.push(`Player ${view.players.length + 1}`); render(); },
+  'del-player'(d) { view.players.splice(+d.i, 1); render(); },
+  start() {
+    const names = view.players.map(s => s.trim()).filter(Boolean);
+    if (!names.length) return alert('Add at least one player.');
+    if (!gameById(view.gameId).rounds.some(R => R.categories.some(C => C.clues.some(filled)))) {
+      if (!confirm('This game has no clues yet. Start anyway?')) return;
+    }
+    play = newPlay(view.gameId, names);
+    savePlay(); view = { name: 'board' }; render();
+  },
+
+  // Board
+  open(d) {
+    const clue = playGame().rounds[play.round].categories[+d.c].clues[+d.i];
+    view.clue = { r: play.round, c: +d.c, i: +d.i, stage: clue.dd ? 'dd' : 'clue', revealed: false, wrong: [] };
+    renderOverlay();
+  },
+  'dd-pick'(d) { view.clue.ddPlayer = d.p; view.clue.err = ''; renderOverlay(); },
+  'dd-go'() {
+    const vc = view.clue;
+    if (!vc.ddPlayer) { vc.err = 'Pick who selected the Daily Double.'; return renderOverlay(); }
+    const R = playGame().rounds[vc.r], max = Math.max(player(vc.ddPlayer).score, Math.max(...R.values));
+    const w = parseInt(vc.wager);
+    if (isNaN(w) || w < 0 || w > max) { vc.err = `Wager must be between $0 and ${fmt(max)}.`; return renderOverlay(); }
+    vc.wager = w; vc.stage = 'clue'; vc.err = '';
+    renderOverlay();
+  },
+  reveal() { view.clue.revealed = true; renderOverlay(); },
+  right(d) {
+    const vc = view.clue, worth = vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i];
+    adjust(d.p, worth); markUsed();
+  },
+  wrong(d) {
+    const vc = view.clue, worth = vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i];
+    adjust(d.p, -worth);
+    if (vc.ddPlayer) return markUsed();
+    vc.wrong.push(d.p);
+    if (vc.wrong.length === play.players.length) vc.revealed = true;
+    render();
+  },
+  'clue-done'() { markUsed(); },
+  'clue-cancel'() { view.clue = null; renderOverlay(); },
+  undo() {
+    const e = play.log.pop();
+    if (e) { const p = player(e.pid); if (p) p.score -= e.delta; savePlay(); }
+    render();
+  },
+  'edit-score'(d) {
+    const p = player(d.p);
+    const v = prompt(`Set score for ${p.name}:`, p.score);
+    if (v === null) return;
+    const n = parseInt(String(v).replace(/[$,\s]/g, ''));
+    if (isNaN(n)) return;
+    adjust(p.id, n - p.score); render();
+  },
+  'next-round'() {
+    if (play.round < playGame().rounds.length - 1) { play.round++; savePlay(); render(); }
+    else goFinal();
+  },
+  'prev-round'() { if (play.round > 0) { play.round--; savePlay(); render(); } },
+
+  // Final
+  'back-board'() { stopTimer(); play.final = null; savePlay(); view = { name: 'board' }; render(); },
+  'f-wagers'() { play.final.stage = 'wager'; savePlay(); render(); },
+  'f-clue'() {
+    const F = play.final;
+    for (const p of play.players.filter(p => p.score > 0)) {
+      const w = parseInt(F.wagers[p.id]);
+      if (isNaN(w) || w < 0 || w > p.score) { F.err = `${p.name}'s wager must be between $0 and ${fmt(p.score)}.`; return render(); }
+      F.wagers[p.id] = w;
+    }
+    F.err = ''; F.stage = 'clue'; savePlay(); render();
+  },
+  'f-timer'() {
+    stopTimer();
+    timer = { start: Date.now(), ms: 30000 };
+    timer.handle = setTimeout(beep, timer.ms);
+    render();
+  },
+  'f-reveal'() { stopTimer(); play.final.stage = 'reveal'; savePlay(); render(); },
+  'f-judge'(d) { play.final.results[d.p] = d.v === '1'; savePlay(); render(); },
+  'f-apply'() {
+    const F = play.final;
+    if (F.applied) return;
+    for (const p of play.players.filter(p => p.id in F.results)) adjust(p.id, (F.results[p.id] ? 1 : -1) * (F.wagers[p.id] || 0));
+    F.applied = true; F.stage = 'results'; savePlay(); render();
+  },
+  rematch() {
+    play = newPlay(play.gameId, play.players.map(p => p.name));
+    savePlay(); view = { name: 'board' }; render();
+  },
+};
+
+document.addEventListener('click', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.disabled) return;
+  actions[el.dataset.act]?.(el.dataset, el);
+});
+
+function onField(e) {
+  const el = e.target, d = el.dataset;
+  if (d.path && view.name === 'edit') {
+    const val = el.type === 'checkbox' ? el.checked : d.type === 'num' ? (parseInt(el.value) || 0) : el.value;
+    setPath(editGame(), d.path, val);
+    if (d.path.endsWith('.dd')) el.closest('.cell-ed')?.classList.toggle('dd', el.checked);
+    saveGames();
+  } else if ('pname' in d && view.name === 'setup') {
+    view.players[+d.pname] = el.value;
+  } else if ('ddwager' in d && view.clue) {
+    view.clue.wager = el.value;
+  } else if (d.fwager && play?.final) {
+    play.final.wagers[d.fwager] = el.value;
+    savePlay();
+  }
+}
+document.addEventListener('input', onField);
+document.addEventListener('change', onField);
+
+document.addEventListener('keydown', e => {
+  const typing = !!e.target.matches?.('input, textarea');
+  if (view.name === 'board' && view.clue) {
+    const vc = view.clue;
+    if (e.key === 'Enter' && typing && 'ddwager' in e.target.dataset) { e.preventDefault(); actions['dd-go'](); return; }
+    if (typing) return;
+    if (e.key === ' ' && vc.stage === 'clue' && !vc.revealed) { e.preventDefault(); actions.reveal(); }
+    else if (e.key === 'Escape' && !vc.ddPlayer) actions['clue-cancel']();
+  } else if (view.name === 'final' && !typing && e.key === ' ' && play.final.stage === 'clue') {
+    e.preventDefault(); actions['f-reveal']();
+  }
+});
+
+$('#file').addEventListener('change', async e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  try {
+    const data = JSON.parse(await file.text());
+    const list = (Array.isArray(data) ? data : [data]).map(normalize);
+    games.push(...list); saveGames(); render();
+  } catch (err) {
+    alert('Could not import that file: ' + err.message);
+  }
+});
+
+render();
+</script>
+</body>
+</html>
