@@ -351,6 +351,13 @@
   .cap-cell { aspect-ratio: 16 / 10; font-size: clamp(24px, 5vw, 34px); background: #e9e9ef; border: 3px solid transparent; border-radius: 4px; color: inherit; padding: 0; }
   .cap-cell.on { border-color: #4a90e2; background: #d6e6fb; }
   .captcha-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 12px; gap: 8px; font-size: 14px; }
+  .clue-img { display: block; align-self: center; max-width: min(100%, 900px); max-height: 42vh; border-radius: 12px; box-shadow: 0 4px 0 rgba(0, 0, 0, .45); object-fit: contain; background: #fff; }
+  .clue-img.small { max-height: 24vh; }
+  .img-loading { background: rgba(0, 0, 0, .3); color: #ddd0fa; padding: 36px 48px; font-size: 18px; box-shadow: none; }
+  .photo-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+  .img-thumb { width: 64px; height: 44px; object-fit: cover; border-radius: 6px; display: block; }
+  .img-thumb.img-loading { padding: 0; font-size: 10px; display: flex; align-items: center; justify-content: center; }
+  button.small { font-size: 12px; padding: .3em .6em; }
   .player.away { opacity: .5; }
   button.pname { background: none; border: 0; padding: 0; width: 100%; font: inherit; font-size: 13px; cursor: pointer; }
   button.pname:hover { color: #fff; text-decoration: underline; }
@@ -371,6 +378,7 @@
 <div id="dialog" hidden></div>
 <div id="toast" hidden></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
+<input type="file" id="imgfile" accept="image/*" hidden>
 
 <script>
 // If anything goes wrong while starting up, show it instead of leaving a blank page.
@@ -605,12 +613,12 @@ function normalize(g, id) {
     const categories = (Array.isArray(R?.categories) ? R.categories : []).map(C => {
       const clues = Array.isArray(C?.clues) ? C.clues.slice(0, values.length) : [];
       while (clues.length < values.length) clues.push(blankClue());
-      return { name: String(C?.name ?? ''), clues: clues.map(x => ({ q: String(x?.q ?? ''), a: String(x?.a ?? ''), dd: !!x?.dd })) };
+      return { name: String(C?.name ?? ''), clues: clues.map(x => ({ q: String(x?.q ?? ''), a: String(x?.a ?? ''), dd: !!x?.dd, img: validImgId(x?.img) ? x.img : '' })) };
     });
     return { name: String(R?.name ?? `Round ${ri + 1}`), values, categories };
   });
   const f = g.final || {};
-  out.final = { enabled: f.enabled ?? true, category: String(f.category ?? ''), q: String(f.q ?? ''), a: String(f.a ?? '') };
+  out.final = { enabled: f.enabled ?? true, category: String(f.category ?? ''), q: String(f.q ?? ''), a: String(f.a ?? ''), img: validImgId(f.img) ? f.img : '' };
   out.settings = cleanSettings(g.settings);
   return out;
 }
@@ -684,7 +692,7 @@ function publishLive() {
   const s = JSON.stringify(buildLive());
   if (s === liveJson) return;
   liveJson = s;
-  for (const rec of conns.values()) if (rec.role) send(rec, { type: 'state', state: JSON.parse(s) });
+  for (const rec of conns.values()) if (rec.role) { send(rec, { type: 'state', state: JSON.parse(s) }); pushImages(rec); }
 }
 function send(rec, msg) { try { if (rec.conn.open) rec.conn.send(msg); } catch {} }
 
@@ -698,6 +706,7 @@ function buildLive() {
     return { ...base, phase: 'final', final: {
       stage: F.stage, category: f.category,
       q: ['clue', 'reveal'].includes(F.stage) ? f.q : null,
+      img: ['clue', 'reveal'].includes(F.stage) && f.img ? f.img : null,
       a: F.stage === 'reveal' ? f.a : null,
       timerEnd: F.stage === 'clue' ? (F.timerEnd || null) : null,
       timerMs: F.timerMs || 30000,
@@ -716,6 +725,7 @@ function buildLive() {
       dd: !!cl.dd, ddName: cl.ddPlayer ? (player(cl.ddPlayer)?.name || '') : '',
       wager: showQ && cl.ddPlayer ? cl.wager : null,
       q: showQ ? liveQuestion(cl, clue) : null, a: cl.revealed ? clue.a : null, revealed: !!cl.revealed,
+      img: showQ && clue.img ? clue.img : null,
       qOrig: cl.yoda && cl.revealed ? clue.q : null,
       pingMore: !!(cl.ping && !cl.revealed && cl.ping.n < cl.ping.total),
       open: !!cl.open, queue: cl.queue, lockout: cl.wrong,
@@ -1029,6 +1039,7 @@ function renderEditor() {
             <textarea id="q-${k}" data-path="${p}.q" placeholder="Clue" aria-label="Clue">${esc(cl.q)}</textarea>
             <input id="a-${k}" data-path="${p}.a" value="${esc(cl.a)}" placeholder="Correct response" aria-label="Correct response">
             <label class="dd-toggle"><input id="dd-${k}" type="checkbox" data-path="${p}.dd" ${cl.dd ? 'checked' : ''}> Daily Double</label>
+            ${photoControls(p, cl.img)}
           </div></td>`; }).join('')}
         </tr>`).join('')}</tbody>
       </table></div>
@@ -1056,6 +1067,7 @@ function renderEditor() {
         <label for="f-cat">Category</label><input id="f-cat" data-path="final.category" value="${esc(g.final.category)}" placeholder="Category">
         <label for="f-q">Clue</label><textarea id="f-q" data-path="final.q" rows="3" placeholder="Clue">${esc(g.final.q)}</textarea>
         <label for="f-a">Correct response</label><input id="f-a" data-path="final.a" value="${esc(g.final.a)}" placeholder="Correct response">
+        <label>Photo (optional)</label>${photoControls('final', g.final.img)}
       </div>
     </section>
   </main>`}`;
@@ -1267,7 +1279,7 @@ function renderFinal() {
   } else if (F.stage === 'clue') {
     body = `<div class="clue-card">
       <div class="clue-meta center">${esc(f.category)}</div>
-      <div class="clue-text">${esc(f.q)}</div>
+      <div class="clue-text">${esc(f.q)}</div>${f.img ? imgTag(f.img) : ''}
       ${timerBar(F.timerEnd, F.timerMs)}
       <div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${esc(f.a) || '<em>(none entered)</em>'}</div>
       <div class="actions">
@@ -1279,7 +1291,7 @@ function renderFinal() {
     const allJudged = players.every(p => p.id in F.results);
     body = `<div class="clue-card">
       <div class="clue-meta center">${esc(f.category)}</div>
-      <div class="clue-text" style="font-size:clamp(18px,2.6vw,34px)">${esc(f.q)}</div>
+      <div class="clue-text" style="font-size:clamp(18px,2.6vw,34px)">${esc(f.q)}</div>${f.img ? imgTag(f.img, 'clue-img small') : ''}
       <div class="answer">${esc(f.a) || '<em>(none entered)</em>'}</div>
       <div class="wtable">${players.length ? players.map(p => { const res = F.results[p.id]; return `<div class="wrow judge-row">
         <strong>${esc(p.name)}</strong><span class="muted">wagered ${fmt(F.wagers[p.id] || 0)}</span>
@@ -1379,6 +1391,7 @@ function renderPlayer() {
           ${effectPill(c.effect)}
           <div class="clue-meta"><span>${esc(c.cat)}</span><span>${c.dd ? `Daily Double · ${esc(c.ddName)} · ${fmt(c.wager * (c.mult || 1))}` : fmt(c.value * (c.mult || 1))}${c.mult > 1 ? ' · ×2' : ''}</span></div>
           <div class="clue-text">${esc(c.q)}${c.pingMore ? '<span class="ping-dots"> …</span>' : ''}</div>
+          ${c.img ? imgTag(c.img) : ''}
           ${c.qOrig ? `<p class="label">Original: ${esc(c.qOrig)}</p>` : ''}
           ${c.revealed ? `<div class="answer">${esc(c.a || '')}</div>` : ''}
           <div class="queue-line">${!c.dd && c.queue.length ? `<b class="first">${avatarSvg(L.players.find(p => p.id === c.queue[0])?.av, 28)}${name(c.queue[0])}</b> buzzed in first${c.queue.length > 1 ? ` · then ${c.queue.slice(1).map(name).join(', ')}` : ''}` : ''}</div>
@@ -1411,7 +1424,7 @@ function playerFinal(L) {
   else if (F.stage === 'category' || F.stage === 'wager') inner = `<div class="dd-title" style="font-size:clamp(36px,8vw,90px)">Final 2MixParty!</div>
       <p class="label">The category is</p><div class="final-cat">${esc(F.category)}</div>
       ${F.stage === 'wager' ? playerWager(L, F) : ''}`;
-  else inner = `<div class="clue-meta center">${esc(F.category)}</div><div class="clue-text">${esc(F.q)}</div>
+  else inner = `<div class="clue-meta center">${esc(F.category)}</div><div class="clue-text">${esc(F.q)}</div>${F.img ? imgTag(F.img) : ''}
       ${F.stage === 'clue' ? timerBar(F.timerEnd, F.timerMs) : `<div class="answer">${esc(F.a || '')}</div>`}`;
   return `<div class="clue-stage">${inner}</div>`;
 }
@@ -1533,13 +1546,13 @@ function liveQuestion(cl, clue) {
   return clue.q;
 }
 function hostQuestionHtml(vc, clue) {
-  if (vc.yoda) return `<div class="clue-text">${esc(vc.yoda)}</div><p class="label">Original: ${esc(clue.q)}</p>`;
+  if (vc.yoda) return `<div class="clue-text">${esc(vc.yoda)}</div><p class="label">Original: ${esc(clue.q)}</p>${clue.img ? imgTag(clue.img) : ''}`;
   if (vc.ping && !vc.revealed) {
     const words = clue.q.split(/\s+/).filter(Boolean);
     return `<div class="clue-text">${words.map((x, k) => k < vc.ping.n ? esc(x) : `<span class="unseen">${esc(x)}</span>`).join(' ')}</div>
-      <p class="label">${vc.ping.n < vc.ping.total ? (vc.queue.length ? 'Paused: someone buzzed.' : 'Revealing one word at a time… Players only see the words so far.') : 'All words shown.'}</p>`;
+      <p class="label">${vc.ping.n < vc.ping.total ? (vc.queue.length ? 'Paused: someone buzzed.' : 'Revealing one word at a time… Players only see the words so far.') : 'All words shown.'}</p>${clue.img ? imgTag(clue.img) : ''}`;
   }
-  return `<div class="clue-text">${esc(clue.q)}</div>`;
+  return `<div class="clue-text">${esc(clue.q)}</div>${clue.img ? imgTag(clue.img) : ''}`;
 }
 // Host ticker: reveal "Ping" words and end drawing time, even across a host reload.
 setInterval(() => {
@@ -1731,7 +1744,7 @@ function hostArtHtml(vc, C, clue) {
   if (vc.stage === 'art') {
     return `<div class="clue-card">${effectPill('art')}
       <div class="clue-meta"><span>${esc(C.name)}</span><span>${fmt(worth)}</span></div>
-      <div class="clue-text">${esc(clue.q)}</div>
+      <div class="clue-text">${esc(clue.q)}</div>${clue.img ? imgTag(clue.img) : ''}
       ${timerBar(a.endsAt, a.ms)}
       <div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${esc(clue.a) || '<em>(none entered)</em>'}</div>
       <p class="label">Players are drawing the answer. ${Object.keys(a.drawings).length} drawing(s) in so far.</p>
@@ -1825,6 +1838,115 @@ function openClue(c, i, forceEffect = null) {
   savePlay(); render();
 }
 
+// ---------- Photos ----------
+// Photos are shrunk to at most 1280px and kept in this browser's IndexedDB (localStorage is too
+// small for pictures). Games only store an id. Players receive each picture once, when it's needed.
+const IMG_MAX = 1280;
+const validImgId = x => typeof x === 'string' && /^img_[a-z0-9]{6,40}$/.test(x);
+const validImgData = d => typeof d === 'string' && d.length < 6e6 && /^data:image\/(jpeg|png|webp|gif);base64,[A-Za-z0-9+/=]+$/.test(d);
+const imgCache = new Map();
+let imgDbP = null;
+function imgDb() {
+  return imgDbP ||= new Promise(res => {
+    try {
+      const r = indexedDB.open('2mixparty-images', 1);
+      r.onupgradeneeded = () => r.result.createObjectStore('images');
+      r.onsuccess = () => res(r.result);
+      r.onerror = () => res(null);
+    } catch { res(null); }
+  });
+}
+async function idbDo(mode, fn) {
+  const db = await imgDb();
+  if (!db) return null;
+  return new Promise(res => {
+    try {
+      const tx = db.transaction('images', mode), req = fn(tx.objectStore('images'));
+      tx.oncomplete = () => res(req?.result ?? null);
+      tx.onerror = tx.onabort = () => res(null);
+    } catch { res(null); }
+  });
+}
+const imgPut = (id, d) => idbDo('readwrite', st => st.put(d, id));
+const imgGet = id => idbDo('readonly', st => st.get(id));
+const imgDelete = id => idbDo('readwrite', st => st.delete(id));
+const gameImageIds = g => [...g.rounds.flatMap(R => R.categories.flatMap(C => C.clues.map(cl => cl.img))), g.final?.img].filter(validImgId);
+// Remove stored photos no game uses any more.
+async function gcImages() {
+  const keys = await idbDo('readonly', st => st.getAllKeys());
+  if (!keys) return;
+  const used = new Set(games.flatMap(gameImageIds));
+  for (const k of keys) if (!used.has(k)) { imgCache.delete(k); imgDelete(k); }
+}
+async function fileToDataUrl(file) {
+  if (!file.type.startsWith('image/')) throw new Error('That file isn’t an image.');
+  const url = URL.createObjectURL(file);
+  try {
+    const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = () => rej(new Error('That image couldn’t be opened.')); i.src = url; });
+    const k = Math.min(1, IMG_MAX / Math.max(img.naturalWidth, img.naturalHeight));
+    const c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    const x = c.getContext('2d');
+    x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height);
+    x.drawImage(img, 0, 0, c.width, c.height);
+    return c.toDataURL('image/jpeg', .85);
+  } finally { URL.revokeObjectURL(url); }
+}
+const imgLoading = new Set();
+function imgTag(id, cls = 'clue-img') {
+  const d = imgCache.get(id);
+  if (d) return `<img class="${cls}" src="${esc(d)}" alt="Photo for this clue">`;
+  if (role === 'host' && !imgLoading.has(id)) {
+    imgLoading.add(id);
+    imgGet(id).then(data => {
+      imgLoading.delete(id);
+      if (!data) return;
+      imgCache.set(id, data);
+      if (typingInApp() || me.drawing) needsRender = true; else render();
+    });
+  }
+  return `<div class="${cls} img-loading">📷 ${role === 'host' ? 'Loading photo…' : 'Photo on its way…'}</div>`;
+}
+function photoControls(path, img) {
+  return `<div class="photo-row">${img ? `${imgTag(img, 'img-thumb')}<button class="icon" data-act="img-remove" data-target="${path}" title="Remove photo">✕</button>` : ''}
+    <button class="ghost small" data-act="img-add" data-target="${path}">📷 ${img ? 'Change photo' : 'Add photo'}</button></div>`;
+}
+// Host: send the photos in play to a device that doesn't have them yet.
+async function pushImages(rec) {
+  const L = buildLive();
+  rec.sentImgs ||= new Set();
+  for (const id of [L.clue?.img, L.final?.img].filter(validImgId)) {
+    if (rec.sentImgs.has(id)) continue;
+    rec.sentImgs.add(id);
+    const data = imgCache.get(id) || await imgGet(id);
+    if (data) { imgCache.set(id, data); send(rec, { type: 'img', id, data }); }
+    else rec.sentImgs.delete(id);
+  }
+}
+function onImage(m) {
+  if (!validImgId(m.id) || !validImgData(m.data)) return;
+  imgCache.set(m.id, m.data);
+  if (me.drawing || typingInApp()) needsRender = true; else render();
+}
+let imgTarget = null;
+$('#imgfile').addEventListener('change', async e => {
+  const file = e.target.files[0], target = imgTarget;
+  e.target.value = '';
+  if (!file || !target || view.name !== 'edit') return;
+  try {
+    const data = await fileToDataUrl(file);
+    const id = 'img_' + uid() + uid();
+    imgCache.set(id, data);
+    if (await imgPut(id, data) === null && !(await imgGet(id))) throw new Error('This browser wouldn’t store the photo.');
+    const g = editGame();
+    setPath(g, `${target}.img`, id);
+    touch(); render(); gcImages();
+    toast('Photo added.');
+  } catch (err) {
+    ask(`That photo couldn't be added: ${err.message}`, { cancel: null });
+  }
+});
+
 // ---------- Actions ----------
 function goFinal() {
   const f = playGame().final;
@@ -1845,8 +1967,11 @@ function clueWorth() {
   const vc = play.clue;
   return (vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i]) * (vc.mult || 1);
 }
-function exportGame(g) {
+async function exportGame(g) {
   const { id, ...data } = g;
+  const images = {};
+  for (const imgId of gameImageIds(g)) { const d = imgCache.get(imgId) || await imgGet(imgId); if (d) images[imgId] = d; }
+  if (Object.keys(images).length) data.images = images;
   const name = `${(g.title || 'game').replace(/[^\w\- ]+/g, '').trim().replace(/\s+/g, '-').toLowerCase() || 'game'}.json`;
   const a = document.createElement('a');
   a.href = URL.createObjectURL(new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' }));
@@ -1870,6 +1995,8 @@ const actions = {
   new() { const g = blankGame(); games.push(g); touch(); view = { name: 'edit', gameId: g.id }; render(); },
   edit(d) { view = { name: 'edit', gameId: d.id, tab: 'questions' }; render(); },
   'ed-tab'(d) { view.tab = d.t; render(); },
+  'img-add'(d) { imgTarget = d.target; $('#imgfile').click(); },
+  'img-remove'(d) { setPath(editGame(), `${d.target}.img`, ''); touch(); render(); gcImages(); },
   dup(d) {
     const g = clone(gameById(d.id));
     g.id = uid(); g.title += ' (copy)'; g.created = Date.now();
@@ -1879,7 +2006,7 @@ const actions = {
     const g = gameById(d.id);
     if (!await ask(`Delete "${g.title}"? This can't be undone.`, { ok: 'Delete', danger: true })) return;
     if (play?.gameId === d.id) { play = null; savePlay(); }
-    games = games.filter(x => x.id !== d.id); saveGames(); render();
+    games = games.filter(x => x.id !== d.id); saveGames(); render(); gcImages();
   },
   export(d) { exportGame(gameById(d.id)); },
   import() { $('#file').value = ''; $('#file').click(); },
@@ -2228,7 +2355,13 @@ $('#file').addEventListener('change', async e => {
   if (!file) return;
   try {
     const data = JSON.parse(await file.text());
-    const list = (Array.isArray(data) ? data : [data]).map(g => normalize(g));
+    const raw = Array.isArray(data) ? data : [data];
+    for (const g of raw) {
+      for (const [imgId, d] of Object.entries(g?.images || {})) {
+        if (validImgId(imgId) && validImgData(d)) { imgCache.set(imgId, d); await imgPut(imgId, d); }
+      }
+    }
+    const list = raw.map(g => normalize(g));
     list.forEach((g, n) => { g.created = Date.now() + n; games.push(g); });
     saveGames(); render();
     toast(`Imported ${list.length} game${list.length > 1 ? 's' : ''}.`);
@@ -2331,7 +2464,9 @@ function onHostMsg(rec, m) {
       if (r !== rec && r.pid && r.pid === rec.pid) { conns.delete(id); try { r.conn.close(); } catch {} }
     }
     refreshPeers();
+    rec.sentImgs = new Set();
     send(rec, { type: 'state', state: buildLive() });
+    pushImages(rec);
   } else if (m.type === 'buzz') {
     const cl = play?.clue;
     if (rec.role !== 'player' || !cl || cl.stage !== 'clue' || !cl.open || cl.ddPlayer || m.token !== cl.token) return;
@@ -2433,6 +2568,7 @@ async function connectPlayer() {
       if (!m || typeof m !== 'object') return;
       if (m.type === 'state' && m.state && typeof m.state === 'object') onLive(m.state);
       else if (m.type === 'kicked') onKicked();
+      else if (m.type === 'img') onImage(m);
     });
     const lost = () => { if (pconn === c) { pconn = null; pstate = 'lost'; refresh(); scheduleRetry(); } };
     c.on('close', lost);
