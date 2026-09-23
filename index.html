@@ -305,6 +305,50 @@
   .setting input[type=number] { width: 90px; flex: none; }
   .setting strong { display: block; }
   .setting small { display: block; color: var(--muted); font-size: 13px; margin-top: 2px; }
+  /* Secrets */
+  .secret-title { font-family: 'Luckiest Guy', var(--display); font-size: clamp(34px, 7vw, 76px); color: #ffd23f; -webkit-text-stroke: .05em #1f0d3f; paint-order: stroke fill; text-shadow: 0 .08em 0 #1f0d3f; animation: pop .7s cubic-bezier(.2, 1.6, .4, 1); }
+  .wheel-wrap { position: relative; width: min(340px, 70vw); aspect-ratio: 1; align-self: center; max-width: 100%; }
+  .wheel { width: 100%; height: 100%; animation: wheelspin 4.2s cubic-bezier(.12, .78, .18, 1) both; filter: drop-shadow(0 6px 0 rgba(0, 0, 0, .35)); }
+  .wheel text { font-family: 'Luckiest Guy', var(--display); font-size: 12px; fill: #1f0d3f; }
+  @keyframes wheelspin { from { transform: rotate(0deg); } to { transform: rotate(var(--end)); } }
+  .wheel-pointer { position: absolute; top: -6px; left: 50%; transform: translateX(-50%); width: 0; height: 0; border-left: 16px solid transparent; border-right: 16px solid transparent; border-top: 30px solid #fff; z-index: 1; filter: drop-shadow(0 3px 0 #1f0d3f); }
+  .secret-result { min-height: 4.5em; }
+  .secret-result.on { animation: pop .5s cubic-bezier(.2, 1.6, .4, 1); }
+  .secret-name { font-family: 'Luckiest Guy', var(--display); font-size: clamp(28px, 5vw, 48px); -webkit-text-stroke: .04em #1f0d3f; paint-order: stroke fill; text-shadow: 0 .07em 0 #1f0d3f; }
+  .effect-pill { align-self: center; background: var(--pc); color: #1f0d3f; font-family: 'Luckiest Guy', var(--display); font-size: 18px; padding: .2em .9em .1em; border-radius: 999px; box-shadow: 0 3px 0 #1f0d3f; letter-spacing: .02em; }
+  .unseen { opacity: .25; }
+  .ping-dots { opacity: .6; }
+  .clue-text.small { font-size: clamp(16px, 2.6vw, 30px); }
+  .bj-table { display: flex; flex-direction: column; gap: 8px; width: min(760px, 100%); align-self: center; text-align: left; }
+  .bj-row { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; background: rgba(0, 0, 0, .3); border-radius: 12px; padding: 8px 12px; }
+  .bj-row.mine { outline: 2px solid var(--accent); }
+  .bj-row.dealer { align-self: center; background: rgba(0, 0, 0, .45); }
+  .bj-row input { width: 110px; }
+  .bj-name { font-weight: 700; min-width: 120px; }
+  .bj-name small { color: var(--muted); font-weight: 400; margin-left: 4px; }
+  .bj-status { color: #ddd0fa; flex: 1; }
+  .bj-status b.win { color: #8ff0bd; } .bj-status b.lose { color: #ff9a9d; }
+  .cards { display: inline-flex; gap: 4px; align-items: center; }
+  .card { display: inline-flex; align-items: center; justify-content: center; min-width: 34px; height: 46px; padding: 0 4px; border-radius: 6px; background: #fff; color: #1f0d3f; font-weight: 800; font-size: 15px; box-shadow: 0 2px 0 rgba(0, 0, 0, .4); }
+  .card.red { color: #d0263a; }
+  .card.back { background: repeating-linear-gradient(45deg, #ff7ac8 0 5px, #b77dff 5px 10px); border: 3px solid #fff; }
+  .bj-val { margin-left: 6px; font-family: var(--display); font-size: 20px; }
+  .art-stage { gap: 12px; }
+  .art-pad { align-self: center; width: min(560px, 100%); aspect-ratio: 4 / 3; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 0 #1f0d3f; }
+  .art-pad canvas { width: 100%; height: 100%; display: block; touch-action: none; cursor: crosshair; background: #fff; }
+  .art-tools { display: flex; flex-wrap: wrap; gap: 8px; justify-content: center; align-items: center; }
+  .gallery { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 12px; width: 100%; }
+  .gallery figure { margin: 0; background: rgba(0, 0, 0, .3); border-radius: 12px; padding: 8px; display: flex; flex-direction: column; gap: 6px; align-items: center; border: 3px solid transparent; }
+  .gallery figure.win { border-color: #ffd23f; }
+  .gallery figcaption { display: flex; align-items: center; gap: 6px; font-weight: 700; }
+  .art { width: 100%; height: auto; border-radius: 6px; display: block; }
+  .captcha { width: min(460px, 100%); background: #f9f9fb; color: #222; border-radius: 10px; border: 1px solid #d3d3d3; box-shadow: 0 2px 6px rgba(0, 0, 0, .35); overflow: hidden; }
+  .captcha-head { background: #4a90e2; color: #fff; padding: 10px 14px; font-size: 16px; }
+  .captcha-head span { font-size: 22px; vertical-align: middle; }
+  .captcha-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 4px; padding: 8px; }
+  .cap-cell { aspect-ratio: 16 / 10; font-size: clamp(24px, 5vw, 34px); background: #e9e9ef; border: 3px solid transparent; border-radius: 4px; color: inherit; padding: 0; }
+  .cap-cell.on { border-color: #4a90e2; background: #d6e6fb; }
+  .captcha-foot { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px 12px; gap: 8px; font-size: 14px; }
   .player.away { opacity: .5; }
   button.pname { background: none; border: 0; padding: 0; width: 100%; font: inherit; font-size: 13px; cursor: pointer; }
   button.pname:hover { color: #fff; text-decoration: underline; }
@@ -413,6 +457,7 @@ function logoHtml(cls = '', tag = 'h1') {
 const AV = {
   hair: ['short', 'long', 'spiky', 'curly', 'bun', 'mohawk', 'bowl', 'clown', 'none'],
   hairColor: ['#3b2417', '#17111f', '#f2d16b', '#d2602e', '#b9b9c6', '#ff7ac8', '#5fe07a', '#4aa8ff', '#9b6bff'],
+  face: ['derp', 'happy', 'angry', 'sad', 'shocked', 'smug', 'love'],
   facial: ['none', 'mustache', 'beard', 'full', 'goatee', 'stubble'],
   acc: ['none', 'glasses', 'sunglasses', 'partyhat', 'crown', 'headphones', 'bow'],
   skin: ['#f9dcc4', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'],
@@ -421,6 +466,7 @@ const AV = {
 const AV_LABEL = {
   hair: { short: 'Cowlick', long: 'Long', spiky: 'Spiky', curly: 'Curly', bun: 'Bun', mohawk: 'Mohawk', bowl: 'Bowl cut', clown: 'Clown', none: 'Bald' },
   hairColor: ['Brown', 'Black', 'Blonde', 'Ginger', 'Grey', 'Pink', 'Green', 'Blue', 'Purple'],
+  face: { derp: 'Derp', happy: 'Happy', angry: 'Angry', sad: 'Sad', shocked: 'Shocked', smug: 'Smug', love: 'In love' },
   facial: { none: 'None', mustache: 'Mustache', beard: 'Beard', full: 'Beard & mustache', goatee: 'Goatee', stubble: 'Stubble' },
   acc: { none: 'None', glasses: 'Glasses', sunglasses: 'Sunglasses', partyhat: 'Party hat', crown: 'Crown', headphones: 'Headphones', bow: 'Bow' },
 };
@@ -428,6 +474,7 @@ const pickFrom = list => list[Math.floor(Math.random() * list.length)];
 function cleanAv(a) {
   a = a && typeof a === 'object' ? a : {};
   return {
+    face: AV.face.includes(a.face) ? a.face : 'derp',
     hair: AV.hair.includes(a.hair) ? a.hair : 'short',
     hairColor: AV.hairColor.includes(a.hairColor) ? a.hairColor : '#3b2417',
     // (the mustache used to be an accessory; old avatars keep it as facial hair)
@@ -436,6 +483,43 @@ function cleanAv(a) {
     skin: AV.skin.includes(a.skin) ? a.skin : '#e0ac69',
     color: AV.color.includes(a.color) ? a.color : '#ffffff',
   };
+}
+// Faces keep both eyes in the same spots (left big, right small) so glasses and hats still line up.
+function faceSvg(face, skin, ink) {
+  const whites = (r1 = 3.8, r2 = 2.9) => `<circle cx="15" cy="19.5" r="${r1}" fill="#fff" stroke="${ink}" stroke-width=".6"/><circle cx="25.5" cy="20.5" r="${r2}" fill="#fff" stroke="${ink}" stroke-width=".6"/>`;
+  const pupils = (x1, y1, r1, x2, y2, r2) => `<circle cx="${x1}" cy="${y1}" r="${r1}" fill="${ink}"/><circle cx="${x2}" cy="${y2}" r="${r2}" fill="${ink}"/>`;
+  const line = (d, w = 1.3) => `<path d="${d}" stroke="${ink}" stroke-width="${w}" fill="none" stroke-linecap="round" stroke-linejoin="round"/>`;
+  const blush = `<circle cx="11.4" cy="24.6" r="2" fill="#ff6b8a" opacity=".45"/><circle cx="28.8" cy="25" r="1.7" fill="#ff6b8a" opacity=".45"/>`;
+  const grin = `<path d="M13.6 25.6 Q20 36 27.2 25.4 Q20.4 27.6 13.6 25.6Z" fill="${ink}"/><rect x="16.6" y="26" width="7.4" height="1.9" rx=".5" fill="#fff"/><ellipse cx="21.2" cy="30.6" rx="2.6" ry="1.5" fill="#ff6b8a"/>`;
+  const heart = (x, y, k) => `<path transform="translate(${x} ${y}) scale(${k})" d="M0 1.3 C-2.6 -.4 -1.5 -2.6 0 -1.1 C1.5 -2.6 2.6 -.4 0 1.3Z" fill="#ff4b6e" stroke="${ink}" stroke-width="${.5 / k}"/>`;
+  const faces = {
+    derp: whites() + pupils(16.6, 20.7, 1.6, 24.3, 19.6, 1.25)
+      + line('M11.2 14.2 L18.2 12.8') + line('M22.8 16.8 L28.4 18')
+      + `<path d="M14.6 27.2 Q20 33.4 26.4 26.4 Q20.5 29.2 14.6 27.2Z" fill="${ink}"/>`
+      + `<rect x="18.2" y="27.7" width="1.9" height="2.3" rx=".4" fill="#fff"/><rect x="20.3" y="27.6" width="1.9" height="2.5" rx=".4" fill="#fff"/>`
+      + `<ellipse cx="23" cy="29.4" rx="1.8" ry="1.1" fill="#ff6b8a"/>`,
+    happy: line('M11.4 20.6 Q15 15.4 18.6 20.6', 1.5) + line('M22.8 21.2 Q25.5 17.2 28.2 21.2', 1.5)
+      + line('M11.5 13.4 Q15 11 18.5 12.8') + line('M22.5 15.4 Q25.5 13.6 28.4 15.8') + blush + grin,
+    angry: whites() + pupils(16.2, 20.4, 1.4, 24.7, 20.8, 1.1)
+      + line('M10.6 14.6 L18.9 18', 1.9) + line('M22 18.8 L29.2 15.4', 1.9)
+      + `<rect x="14.6" y="26.2" width="11.6" height="4.2" rx="1.4" fill="#fff" stroke="${ink}" stroke-width=".8"/>`
+      + line('M14.8 28.3 H26 M17.5 26.4 V30.2 M20.4 26.4 V30.2 M23.3 26.4 V30.2', .6)
+      + `<path d="M25.4 9.6 Q26.4 10.8 25.4 12 M28.4 9.6 Q27.4 10.8 28.4 12" stroke="#e53935" stroke-width="1" fill="none" stroke-linecap="round"/>`,
+    sad: whites() + pupils(15.4, 21.7, 1.5, 25.2, 22, 1.2)
+      + line('M10.8 15.6 L18 12.8') + line('M22.8 14.8 L28.6 17.2')
+      + line('M15.2 30.4 Q17.5 26.8 20.2 28.3 Q23 26.6 25.8 30.2', 1.4)
+      + `<path d="M11.8 23 Q10.4 25.6 11.8 26.4 Q13.2 25.6 11.8 23Z" fill="#7fd4ff" stroke="${ink}" stroke-width=".3"/>`,
+    shocked: whites(4.6, 3.8) + pupils(15, 19.8, .9, 25.4, 20.7, .8)
+      + line('M10.4 12.6 Q15 9.4 19.2 12.2') + line('M21.8 14 Q25.6 11.4 29.2 14.4')
+      + `<ellipse cx="20.4" cy="29.2" rx="2.6" ry="3.3" fill="${ink}"/><ellipse cx="20.4" cy="30.8" rx="1.5" ry="1" fill="#ff6b8a"/>`,
+    smug: whites() + pupils(17.3, 20.4, 1.4, 27, 21, 1.1)
+      + `<path d="M11.2 19.6 A3.8 3.8 0 0 1 18.8 19.6 Z" fill="${skin}" stroke="${ink}" stroke-width=".7"/><path d="M22.6 20.6 A2.9 2.9 0 0 1 28.4 20.6 Z" fill="${skin}" stroke="${ink}" stroke-width=".7"/>`
+      + line('M11 14.8 L18.2 14.4') + line('M22.4 15.4 Q25.4 11.4 28.8 14.6')
+      + line('M15.4 27.6 Q21.6 29.8 26.4 25.4', 1.4) + line('M26.4 25.4 Q27.4 25.9 27.1 26.9', 1.1),
+    love: heart(15, 19.5, 2.3) + heart(25.5, 20.5, 1.8)
+      + line('M11.5 13.4 Q15 11 18.5 12.8') + line('M22.5 15.4 Q25.5 13.6 28.4 15.8') + blush + grin,
+  };
+  return `<ellipse cx="20.6" cy="24.2" rx="2.5" ry="1.9" fill="rgba(120,30,40,.3)"/>${faces[face] || faces.derp}`;
 }
 function avatarSvg(av, size = 36) {
   const a = cleanAv(av), H = a.hairColor, ink = '#1f0d3f';
@@ -470,26 +554,19 @@ function avatarSvg(av, size = 36) {
     goatee: `<path d="M17.2 31 Q20.3 37.5 23.4 31 Q20.3 32.6 17.2 31Z" fill="${H}"/>`,
     stubble: `<g fill="${H}" opacity=".55">${[[11, 26], [12.5, 28.6], [14.5, 30.6], [17, 32], [20, 32.6], [23, 32], [25.6, 30.6], [27.6, 28.6], [29, 26], [13, 25.3], [27.2, 25.3], [16, 29.8], [24.4, 29.8], [18.5, 31.4], [21.6, 31.4]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r=".55"/>`).join('')}</g>`,
   }[a.facial] || '';
-  // The derp: sticky-out ears, googly cross-eyes of two sizes, wonky brows, blob nose,
-  // and a lopsided open grin with buck teeth and a tongue.
+  // Sticky-out ears, a blob nose, and one of the goofy faces above.
   return `<svg class="av" width="${size}" height="${size}" viewBox="0 -4 40 44" aria-hidden="true">
     <path d="M4.5 40 Q5.5 30.5 20 30.5 Q34.5 30.5 35.5 40 Z" fill="${a.color}"/>${back}
     <ellipse cx="8.4" cy="22" rx="2.8" ry="3.8" fill="${a.skin}"/><ellipse cx="31.8" cy="21" rx="2.4" ry="3.3" fill="${a.skin}"/>
     <ellipse cx="20" cy="21" rx="11.5" ry="10.6" fill="${a.skin}"/>
-    <circle cx="15" cy="19.5" r="3.8" fill="#fff" stroke="${ink}" stroke-width=".6"/><circle cx="25.5" cy="20.5" r="2.9" fill="#fff" stroke="${ink}" stroke-width=".6"/>
-    <circle cx="16.6" cy="20.7" r="1.6" fill="${ink}"/><circle cx="24.3" cy="19.6" r="1.25" fill="${ink}"/>
-    <path d="M11.2 14.2 L18.2 12.8" stroke="${ink}" stroke-width="1.3" stroke-linecap="round"/><path d="M22.8 16.8 L28.4 18" stroke="${ink}" stroke-width="1.3" stroke-linecap="round"/>
-    <ellipse cx="20.6" cy="24.2" rx="2.5" ry="1.9" fill="rgba(120,30,40,.3)"/>
-    <path d="M14.6 27.2 Q20 33.4 26.4 26.4 Q20.5 29.2 14.6 27.2Z" fill="${ink}"/>
-    <rect x="18.2" y="27.7" width="1.9" height="2.3" rx=".4" fill="#fff"/><rect x="20.3" y="27.6" width="1.9" height="2.5" rx=".4" fill="#fff"/>
-    <ellipse cx="23" cy="29.4" rx="1.8" ry="1.1" fill="#ff6b8a"/>
+    ${faceSvg(a.face, a.skin, ink)}
     ${facial}${front}${acc}</svg>`;
 }
 // A player's name in their chosen colour (players added by the host without a device stay white).
 const nameHtml = p => `<span class="pn" style="color:${cleanAv(p?.av).color}">${esc(p?.name)}</span>`;
 
 // This device's avatar: remembered, or a random starting look the first time.
-me.av = cleanAv(lsGet('jeoparty.avatar', null) || { hair: pickFrom(AV.hair.slice(0, 8)), hairColor: pickFrom(AV.hairColor), facial: 'none', acc: 'none', skin: pickFrom(AV.skin), color: pickFrom(AV.color) });
+me.av = cleanAv(lsGet('jeoparty.avatar', null) || { face: pickFrom(AV.face), hair: pickFrom(AV.hair.slice(0, 8)), hairColor: pickFrom(AV.hairColor), facial: 'none', acc: 'none', skin: pickFrom(AV.skin), color: pickFrom(AV.color) });
 lsSet('jeoparty.avatar', me.av);
 
 // ---------- Model ----------
@@ -501,7 +578,7 @@ function newRound(name, mult = 1) {
 }
 // Game modifiers, set per game on the editor's Settings tab. Add new ones here with a default,
 // sanitise them in cleanSettings(), and give them a row in renderSettings().
-const DEFAULT_SETTINGS = { wrongCosts: true, dailyDoubles: true, effects: true, finalSeconds: 30 };
+const DEFAULT_SETTINGS = { wrongCosts: true, dailyDoubles: true, effects: true, secrets: false, finalSeconds: 30 };
 function cleanSettings(x) {
   x = x && typeof x === 'object' ? x : {};
   const bool = (k) => typeof x[k] === 'boolean' ? x[k] : DEFAULT_SETTINGS[k];
@@ -509,6 +586,7 @@ function cleanSettings(x) {
     wrongCosts: bool('wrongCosts'),
     dailyDoubles: bool('dailyDoubles'),
     effects: bool('effects'),
+    secrets: bool('secrets'),
     finalSeconds: Math.min(300, Math.max(5, parseInt(x.finalSeconds) || DEFAULT_SETTINGS.finalSeconds)),
   };
 }
@@ -630,13 +708,19 @@ function buildLive() {
   const cl = play.clue;
   if (cl) {
     const clue = R.categories[cl.c].clues[cl.i];
-    const showQ = cl.stage === 'clue';
+    const showQ = ['clue', 'art', 'art-judge'].includes(cl.stage);
     out.clue = {
       token: cl.token, stage: cl.stage, cat: R.categories[cl.c].name, value: R.values[cl.i],
       dd: !!cl.dd, ddName: cl.ddPlayer ? (player(cl.ddPlayer)?.name || '') : '',
       wager: showQ && cl.ddPlayer ? cl.wager : null,
-      q: showQ ? clue.q : null, a: cl.revealed ? clue.a : null, revealed: !!cl.revealed,
+      q: showQ ? liveQuestion(cl, clue) : null, a: cl.revealed ? clue.a : null, revealed: !!cl.revealed,
+      qOrig: cl.yoda && cl.revealed ? clue.q : null,
+      pingMore: !!(cl.ping && !cl.revealed && cl.ping.n < cl.ping.total),
       open: !!cl.open, queue: cl.queue, lockout: cl.wrong,
+      effect: cl.effect || null, mult: cl.mult || 1, robot: !!cl.robot,
+      secret: cl.stage === 'secret' ? cl.secret : null,
+      bj: cl.stage === 'bj' ? bjLive(cl) : null,
+      art: artLive(cl),
     };
   }
   return out;
@@ -722,6 +806,16 @@ function playFx(kind) {
         vx: (side ? -1 : 1) * (5 + Math.random() * 11), vy: -(10 + Math.random() * 12),
         rot: Math.random() * 6.3, vr: (Math.random() - .5) * .35,
         w: 7 + Math.random() * 7, h: 4 + Math.random() * 4, color: pickFrom(FX_COLORS),
+      });
+    }
+  }
+  if (kind === 'secret') {
+    for (let i = 0; i < 140 * scale; i++) {
+      const a = Math.random() * Math.PI * 2, v = 4 + Math.random() * 12;
+      fxParts.push({
+        kind: 'c', x: W / 2, y: Hh * .4, vx: Math.cos(a) * v, vy: Math.sin(a) * v - 4,
+        rot: Math.random() * 6.3, vr: (Math.random() - .5) * .4,
+        w: 5 + Math.random() * 6, h: 5 + Math.random() * 6, color: pickFrom(['#ffd23f', '#fff3b0', '#ffffff', '#ffb627', '#ffa8d8']),
       });
     }
   }
@@ -852,6 +946,7 @@ function render() {
   else if (view.name === 'final') app.innerHTML = playGame() && play.final ? renderFinal() : renderHome();
   renderOverlay();
   publishLive();
+  if (role === 'player') mountArt();
   app.dataset.ready = '1';
 }
 // Re-render now, or later if the viewer is typing (a render would steal their focus).
@@ -859,7 +954,7 @@ function refresh() {
   if (role === 'host' && view.name === 'edit') { publishLive(); return; }
   if (typingInApp()) { needsRender = true; publishLive(); } else render();
 }
-const typingInApp = () => { const a = document.activeElement; return !!(a && a.matches?.('input, textarea') && $('#app').contains(a)); };
+const typingInApp = () => { const a = document.activeElement; return !!(a && a.matches?.('input, textarea') && ($('#app').contains(a) || $('#overlay').contains(a))); };
 
 function connectedChip() {
   if (peerState === 'error') return `<button class="chip-live off" data-act="invite" title="Players can't join right now">Online play offline</button>`;
@@ -976,6 +1071,7 @@ function renderSettings(g) {
       <div class="settings-list">
         ${toggle('wrongCosts', 'Wrong answers lose points', "A wrong answer takes away the clue's value, or the Daily Double wager. Turn off for a friendlier game.")}
         ${toggle('dailyDoubles', 'Daily Doubles', 'When off, clues marked as Daily Doubles play like normal clues.')}
+        ${toggle('secrets', 'Hidden secrets', '1 or 2 tiles on each board secretly hide a secret. Finding one spins the wheel of chaos: Double trouble, Gamble Slop (blackjack), What is.. Art? (drawing), Are you a robot? (captcha buzzer), What is this Ping?? (one word at a time) or Wrote this, Yoda did!')}
         ${toggle('effects', 'Confetti & skulls', 'Confetti when someone scores and skulls raining down when a clue is missed, on every screen.')}
         <label class="setting" for="set-finalSeconds">
           <input id="set-finalSeconds" type="number" min="5" max="300" step="5" data-type="num" data-path="settings.finalSeconds" value="${st.finalSeconds}">
@@ -1086,13 +1182,28 @@ function renderOverlay() {
     if (w) { w.focus(); const n = w.value.length; try { w.setSelectionRange(n, n); } catch {} }
     return;
   }
+  if (vc.stage === 'secret') {
+    ov.innerHTML = `<div class="clue-card">${secretHtml(vc.secret)}
+      <div class="actions"><button class="primary" data-act="secret-go" ${wheelLanded(vc.secret) ? '' : 'disabled'}>Continue →</button></div></div>`;
+    if (!wheelLanded(vc.secret)) scheduleRender(wheelLeft(vc.secret) + 60);
+    return;
+  }
+  if (vc.stage === 'bj') {
+    ov.innerHTML = `<div class="clue-card">${bjHtml(bjLive(vc), play.players, { host: true })}</div>`;
+    return;
+  }
+  if (vc.stage === 'art' || vc.stage === 'art-judge') {
+    ov.innerHTML = hostArtHtml(vc, C, clue);
+    return;
+  }
 
-  const dd = !!vc.ddPlayer, worth = dd ? vc.wager : value;
+  const dd = !!vc.ddPlayer, worth = clueWorth();
   const judges = dd ? [player(vc.ddPlayer)].filter(Boolean)
     : [...vc.queue.map(player).filter(Boolean), ...play.players.filter(p => !vc.queue.includes(p.id))];
   ov.innerHTML = `<div class="clue-card">
-    <div class="clue-meta"><span>${esc(C.name)}</span><span>${dd ? `Daily Double · ${esc(player(vc.ddPlayer)?.name)} wagers ${fmt(worth)}` : fmt(value)}</span></div>
-    <div class="clue-text">${esc(clue.q)}</div>
+    ${effectPill(vc.effect)}
+    <div class="clue-meta"><span>${esc(C.name)}</span><span>${dd ? `Daily Double · ${esc(player(vc.ddPlayer)?.name)} wagers ${fmt(worth)}` : fmt(worth)}${vc.mult > 1 ? ' · ×2' : ''}</span></div>
+    ${hostQuestionHtml(vc, clue)}
     ${vc.revealed ? `<div class="answer"><span class="tag">Correct response</span>${clue.a.trim() ? esc(clue.a) : '<em>(none entered)</em>'}</div>`
       : `<div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${clue.a.trim() ? esc(clue.a) : '<em>(none entered)</em>'}</div>`}
     ${dd ? '' : `<div class="buzzbar">
@@ -1106,7 +1217,7 @@ function renderOverlay() {
     </div>
     <div class="actions">
       ${vc.revealed ? '' : `<button data-act="reveal">Show response to players<kbd>Space</kbd></button>`}
-      ${dd ? '' : `<button data-act="clue-cancel">Back to board<kbd>Esc</kbd></button>`}
+      ${dd || vc.effect ? '' : `<button data-act="clue-cancel">Back to board<kbd>Esc</kbd></button>`}
       ${dd ? '' : `<button class="primary" data-act="clue-done">No one got it · close</button>`}
     </div>
   </div>`;
@@ -1226,6 +1337,8 @@ function renderPlayer() {
         </div>
         <div class="av-editor">
           <div class="av-preview">${avatarSvg(me.av, 112)}<div class="av-name" id="av-name" style="color:${me.av.color}">${esc(me.name) || 'Your name'}</div></div>
+          <p class="label">Face</p>
+          <div class="av-opts">${AV.face.map(x => opt('face', x, avatarSvg({ ...me.av, face: x, acc: 'none', facial: 'none' }, 31), AV_LABEL.face[x])).join('')}</div>
           <p class="label">Hairstyle</p>
           <div class="av-opts">${AV.hair.map(h => opt('hair', h, avatarSvg({ ...me.av, hair: h, acc: 'none' }, 31), AV_LABEL.hair[h])).join('')}</div>
           <p class="label">Hair colour</p>
@@ -1256,9 +1369,14 @@ function renderPlayer() {
     main = c.stage === 'dd'
       ? `<div class="clue-stage"><div class="dd-title">DAILY DOUBLE!</div><div class="clue-meta center">${esc(c.cat)}</div>
           <p class="label">${c.ddName ? `${esc(c.ddName)} is making a wager…` : 'Who found it?'}</p></div>`
+      : c.stage === 'secret' ? `<div class="clue-stage">${secretHtml(c.secret)}</div>`
+      : c.stage === 'bj' ? `<div class="clue-stage">${bjHtml(c.bj, L.players, { me: me.watch ? null : me.pid })}</div>`
+      : c.stage === 'art' || c.stage === 'art-judge' ? playerArtHtml(L, c)
       : `<div class="clue-stage">
-          <div class="clue-meta"><span>${esc(c.cat)}</span><span>${c.dd ? `Daily Double · ${esc(c.ddName)} · ${fmt(c.wager)}` : fmt(c.value)}</span></div>
-          <div class="clue-text">${esc(c.q)}</div>
+          ${effectPill(c.effect)}
+          <div class="clue-meta"><span>${esc(c.cat)}</span><span>${c.dd ? `Daily Double · ${esc(c.ddName)} · ${fmt(c.wager * (c.mult || 1))}` : fmt(c.value * (c.mult || 1))}${c.mult > 1 ? ' · ×2' : ''}</span></div>
+          <div class="clue-text">${esc(c.q)}${c.pingMore ? '<span class="ping-dots"> …</span>' : ''}</div>
+          ${c.qOrig ? `<p class="label">Original: ${esc(c.qOrig)}</p>` : ''}
           ${c.revealed ? `<div class="answer">${esc(c.a || '')}</div>` : ''}
           <div class="queue-line">${!c.dd && c.queue.length ? `<b class="first">${avatarSvg(L.players.find(p => p.id === c.queue[0])?.av, 28)}${name(c.queue[0])}</b> buzzed in first${c.queue.length > 1 ? ` · then ${c.queue.slice(1).map(name).join(', ')}` : ''}` : ''}</div>
         </div>`;
@@ -1279,7 +1397,7 @@ function renderPlayer() {
     </header>
     <main class="pmain">${banner}${main}</main>
     ${L?.players?.length ? scoresBar(L.players, { you: me.watch ? null : me.pid }) : '<div></div>'}
-    ${me.watch ? '' : `<div class="buzz-wrap"><button class="buzzer ${b.cls}" data-act="buzz" ${b.off ? 'disabled' : ''}>${esc(b.label)}</button></div>`}
+    ${me.watch || ['bj', 'art', 'art-judge', 'secret'].includes(L?.clue?.stage) ? '' : `<div class="buzz-wrap">${L?.clue?.robot && !b.off ? captchaHtml(L.clue.token) : `<button class="buzzer ${b.cls}" data-act="buzz" ${b.off ? 'disabled' : ''}>${esc(b.label)}</button>`}</div>`}
   </div>`;
 }
 
@@ -1310,6 +1428,385 @@ function playerWager(L, F) {
     </div>`;
 }
 
+// ---------- Secrets ----------
+const SECRETS = [
+  { key: 'double', label: 'Double trouble!', short: 'Double trouble', icon: '💥', color: '#ff4b4b', desc: 'Right answers win double. Wrong answers lose double.' },
+  { key: 'blackjack', label: 'Gamble Slop!', short: 'Gamble Slop', icon: '🃏', color: '#4cd964', desc: 'Blackjack against the dealer. Wager some of your points to join in.' },
+  { key: 'art', label: 'What is.. Art?', short: 'Art?', icon: '🎨', color: '#3fa9ff', desc: '30 seconds to draw the answer. The host picks the best drawing.' },
+  { key: 'robot', label: 'Are you a robot?', short: 'Robot?', icon: '🤖', color: '#ffd23f', desc: 'Prove you’re human before your buzz counts.' },
+  { key: 'ping', label: 'What is this Ping??', short: 'Ping??', icon: '🐌', color: '#ff7ac8', desc: 'The clue appears one word at a time, and stops when someone buzzes.' },
+  { key: 'yoda', label: 'Wrote this, Yoda did!', short: 'Yoda', icon: '👽', color: '#b77dff', desc: 'The clue, reworded like Yoda it is.' },
+];
+const secretOf = k => SECRETS.find(x => x.key === k);
+const effectPill = k => { const x = secretOf(k); return x ? `<div class="effect-pill" style="--pc:${x.color}">${x.icon} ${esc(x.label)}</div>` : ''; };
+
+// 1 or 2 tiles per board hide a secret, picked when the board is first played. Players never receive the list.
+function ensureSecrets() {
+  if (!play || !S().secrets) return;
+  play.secrets ||= {}; play.secretRounds ||= {};
+  const r = play.round;
+  if (play.secretRounds[r]) return;
+  play.secretRounds[r] = true;
+  const cand = [];
+  playGame().rounds[r].categories.forEach((C, c) => C.clues.forEach((cl, i) => {
+    if (filled(cl) && !play.used[`${r}-${c}-${i}`] && !(cl.dd && S().dailyDoubles)) cand.push(`${r}-${c}-${i}`);
+  }));
+  const n = Math.min(cand.length, cand.length >= 10 && Math.random() < .5 ? 2 : 1);
+  for (let k = 0; k < n; k++) play.secrets[cand.splice(Math.floor(Math.random() * cand.length), 1)[0]] = true;
+}
+
+// The wheel: the host picks the result; every screen spins to it from when it first sees it.
+const WHEEL_DELAY = 1100, WHEEL_SPIN = 4200;
+const wheelSeen = {};
+const hashStr = t => [...String(t)].reduce((h, ch) => (h * 31 + ch.charCodeAt(0)) >>> 0, 7);
+const wheelLeft = sec => Math.max(0, (wheelSeen[sec.spinId] ||= Date.now()) + WHEEL_DELAY + WHEEL_SPIN - Date.now());
+const wheelLanded = sec => wheelLeft(sec) === 0;
+let renderTimer = null;
+function scheduleRender(ms) { clearTimeout(renderTimer); renderTimer = setTimeout(() => { if (!typingInApp() && !me.drawing) render(); }, ms); }
+function secretHtml(sec) {
+  if (!sec) return '';
+  const n = SECRETS.length, seg = 360 / n, idx = Math.max(0, SECRETS.findIndex(x => x.key === sec.effect));
+  const end = 360 * 6 - (idx * seg + seg / 2) + ((hashStr(sec.spinId) % Math.round(seg * .6)) - seg * .3);
+  const elapsed = Date.now() - (wheelSeen[sec.spinId] ||= Date.now());
+  const pt = a => `${(100 * Math.sin(a * Math.PI / 180)).toFixed(2)} ${(-100 * Math.cos(a * Math.PI / 180)).toFixed(2)}`;
+  const slices = SECRETS.map((x, i) => `<path d="M0 0 L${pt(i * seg)} A100 100 0 0 1 ${pt((i + 1) * seg)} Z" fill="${x.color}" stroke="#1f0d3f" stroke-width="2"/>
+    <text transform="rotate(${i * seg + seg / 2 - 90}) translate(60 0)" text-anchor="middle" dominant-baseline="middle">${esc(x.short)}</text>`).join('');
+  const landed = elapsed >= WHEEL_DELAY + WHEEL_SPIN;
+  const x = secretOf(sec.effect);
+  if (!landed) scheduleRender(WHEEL_DELAY + WHEEL_SPIN - elapsed + 60);
+  return `<div class="secret-title">✨ SECRET FOUND! ✨</div>
+    <div class="wheel-wrap"><div class="wheel-pointer"></div>
+      <svg class="wheel" viewBox="-104 -104 208 208" style="--end:${end}deg;animation-delay:${WHEEL_DELAY - elapsed}ms" aria-hidden="true">${slices}<circle r="13" fill="#1f0d3f"/><circle r="8" fill="#ffd23f"/></svg></div>
+    <div class="secret-result ${landed ? 'on' : ''}">${landed && x ? `<div class="secret-name" style="color:${x.color}">${x.icon} ${esc(x.label)}</div><p class="label">${esc(x.desc)}</p>` : '<p class="label">Spinning the wheel of chaos…</p>'}</div>`;
+}
+
+// ---- Wrote this, Yoda did! (rule-based rewording: move what follows the verb, or a trailing
+// prepositional phrase, to the front; words inside quotes are never split)
+const YODA_AUX = new Set('is are was were am be been has have had can could will would shall should may might must do does did'.split(' '));
+const YODA_MODAL = new Set('can could will would shall should may might must do does did'.split(' '));
+const YODA_PREP = new Set('in on at of from with without by for to into onto over under near about after before during through like across around between among against inside'.split(' '));
+const YODA_LOWER = new Set('the a an this that these those he she it they we you his her its their our your my there'.split(' '));
+function yodaCore(w) {
+  const quoted = [];
+  let q = false;
+  for (const x of w) { const n = (x.match(/["“”]/g) || []).length; quoted.push(q && n === 0 ? true : q); if (n % 2) q = !q; }
+  const low = x => (YODA_LOWER.has(x.toLowerCase()) || YODA_PREP.has(x.toLowerCase())) ? x.toLowerCase() : x;
+  const pronounStart = YODA_LOWER.has(w[0].toLowerCase());
+  const k = w.findIndex((x, i) => i > 0 && !quoted[i] && (YODA_AUX.has(x.toLowerCase()) || (pronounStart && /^[a-z]{3,}ed$/.test(x))));
+  if (k > 0 && YODA_MODAL.has(w[k].toLowerCase()) && k < w.length - 2) {
+    const subj = w.slice(0, k); subj[0] = low(subj[0]);
+    return `${w.slice(k + 2).join(' ')}, ${subj.join(' ')} ${w[k]} ${w[k + 1]}`;
+  }
+  if (k > 0 && k < w.length - 1) {
+    const subj = w.slice(0, k); subj[0] = low(subj[0]);
+    return `${w.slice(k + 1).join(' ')}, ${subj.join(' ')} ${w[k]}`;
+  }
+  let j = -1, jOf = -1;
+  w.forEach((x, i) => { if (i > 0 && !quoted[i] && YODA_PREP.has(x.toLowerCase())) { if (x.toLowerCase() === 'of') { if (jOf < 0) jOf = i; } else j = i; } });
+  if (j < 0) j = jOf;
+  if (j > 0) { const head = w.slice(0, j); head[0] = low(head[0]); return `${w.slice(j).join(' ')}, ${head.join(' ').replace(/,+$/, '')}, it is`; }
+  return null;
+}
+function yodaify(text) {
+  let t = String(text).trim().replace(/\s+/g, ' ');
+  if (!t) return t;
+  const end = /[?!]$/.test(t) ? t.slice(-1) : '.';
+  t = t.replace(/[.?!]+$/, '')
+    .replace(/\b(it|that|he|she|what|there|here)['’]s\b/gi, '$1 is')
+    .replace(/\b(\w+)['’]re\b/gi, '$1 are').replace(/\bI['’]m\b/g, 'I am');
+  const cap = x => x.charAt(0).toUpperCase() + x.slice(1);
+  let out = null;
+  const ci = t.lastIndexOf(', ');
+  if (ci > 0) {  // try just the last clause first ("Known as X, it is Y" -> "Known as X, Y, it is")
+    const core = yodaCore(t.slice(ci + 2).split(' '));
+    if (core) out = t.slice(0, ci) + ', ' + core;
+  }
+  if (!out) { const core = yodaCore(t.split(' ')); out = core ? cap(core) : t; }
+  return `${out}${end} ${['Hmm.', 'Yes, hmmm.', 'Herh herh.', 'Mmm.'][t.length % 4]}`;
+}
+function liveQuestion(cl, clue) {
+  if (cl.yoda) return cl.yoda;
+  if (cl.ping && !cl.revealed) return clue.q.split(/\s+/).filter(Boolean).slice(0, cl.ping.n).join(' ');
+  return clue.q;
+}
+function hostQuestionHtml(vc, clue) {
+  if (vc.yoda) return `<div class="clue-text">${esc(vc.yoda)}</div><p class="label">Original: ${esc(clue.q)}</p>`;
+  if (vc.ping && !vc.revealed) {
+    const words = clue.q.split(/\s+/).filter(Boolean);
+    return `<div class="clue-text">${words.map((x, k) => k < vc.ping.n ? esc(x) : `<span class="unseen">${esc(x)}</span>`).join(' ')}</div>
+      <p class="label">${vc.ping.n < vc.ping.total ? (vc.queue.length ? 'Paused: someone buzzed.' : 'Revealing one word at a time… Players only see the words so far.') : 'All words shown.'}</p>`;
+  }
+  return `<div class="clue-text">${esc(clue.q)}</div>`;
+}
+// Host ticker: reveal "Ping" words and end drawing time, even across a host reload.
+setInterval(() => {
+  const vc = role === 'host' ? play?.clue : null;
+  if (!vc) return;
+  const now = Date.now();
+  if (vc.stage === 'clue' && vc.ping && !vc.revealed && vc.open && !vc.queue.length && vc.ping.n < vc.ping.total && now - (vc.ping.last || 0) >= 800) {
+    vc.ping.n++; vc.ping.last = now; savePlay(); refresh();
+  }
+  if (vc.stage === 'art' && vc.art && now > vc.art.endsAt + 1500) { vc.stage = 'art-judge'; savePlay(); refresh(); }
+}, 200);
+
+// ---- Are you a robot? (checked on the player's device before their buzz is sent)
+const CAPTCHA_SETS = [['🐸', 'frogs'], ['🚦', 'traffic lights'], ['🚲', 'bicycles'], ['🔥', 'fires'], ['🍕', 'pizza slices'], ['🦆', 'ducks'], ['🌵', 'cacti'], ['🤡', 'clowns']];
+function newCaptcha(token) {
+  const [target, name] = pickFrom(CAPTCHA_SETS);
+  const others = CAPTCHA_SETS.map(x => x[0]).filter(x => x !== target);
+  const count = 2 + Math.floor(Math.random() * 3);
+  const cells = Array.from({ length: 9 }, (_, i) => i < count ? target : pickFrom(others));
+  for (let i = cells.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [cells[i], cells[j]] = [cells[j], cells[i]]; }
+  return { token, target, name, cells, sel: [] };
+}
+function captchaHtml(token) {
+  if (me.captcha?.token !== token) me.captcha = newCaptcha(token);
+  const cap = me.captcha;
+  return `<div class="captcha" role="group" aria-label="Captcha">
+    <div class="captcha-head">Select all squares with <b>${esc(cap.name)}</b> <span>${cap.target}</span></div>
+    <div class="captcha-grid">${cap.cells.map((e, i) => `<button class="cap-cell ${cap.sel.includes(i) ? 'on' : ''}" data-act="cap-toggle" data-i="${i}" aria-pressed="${cap.sel.includes(i)}">${e}</button>`).join('')}</div>
+    <div class="captcha-foot"><span>☑️ I'm not a robot</span><button class="primary" data-act="cap-verify">Verify &amp; buzz</button></div></div>`;
+}
+
+// ---- Gamble Slop! (blackjack; the host deals and settles, players act from their devices)
+const RANKS = ['A', '2', '3', '4', '5', '6', '7', '8', '9', '10', 'J', 'Q', 'K'], SUITS = ['♠', '♥', '♦', '♣'];
+function newDeck() {
+  const d = [];
+  for (let k = 0; k < 2; k++) for (const s of SUITS) for (const r of RANKS) d.push(r + s);
+  for (let i = d.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [d[i], d[j]] = [d[j], d[i]]; }
+  return d;
+}
+function handValue(cards) {
+  let t = 0, aces = 0;
+  for (const c of cards) {
+    const r = c.slice(0, -1);
+    if (r === 'A') { aces++; t += 11; } else if ('JQK'.includes(r)) t += 10; else t += +r || 0;
+  }
+  while (t > 21 && aces) { t -= 10; aces--; }
+  return t;
+}
+const isBlackjack = cards => cards.length === 2 && handValue(cards) === 21;
+function bjSetWager(pid, w) {
+  const bj = play?.clue?.bj, pl = player(pid);
+  if (!bj || bj.stage !== 'wager' || !pl || pl.score <= 0) return;
+  bj.wagers[pid] = Math.max(0, Math.min(pl.score, w | 0));
+}
+function bjDeal() {
+  const vc = play.clue, bj = vc.bj;
+  const joined = play.players.filter(p => (bj.wagers[p.id] || 0) > 0 && p.score > 0);
+  if (!joined.length) { vc.stage = 'clue'; vc.open = true; savePlay(); render(); return; }
+  bj.deck = newDeck();
+  bj.hands = {};
+  for (const p of joined) {
+    const cards = [bj.deck.pop(), bj.deck.pop()];
+    bj.hands[p.id] = { wager: Math.min(bj.wagers[p.id], p.score), cards, status: isBlackjack(cards) ? 'blackjack' : 'playing' };
+  }
+  bj.dealer = [bj.deck.pop(), bj.deck.pop()];
+  bj.stage = 'play';
+  if (isBlackjack(bj.dealer) || !Object.values(bj.hands).some(h => h.status === 'playing')) bjSettle();
+  savePlay(); render();
+}
+function bjAct(pid, action) {
+  const bj = play?.clue?.bj, h = bj?.hands[pid];
+  if (!bj || bj.stage !== 'play' || !h || h.status !== 'playing') return;
+  if (action === 'hit') {
+    h.cards.push(bj.deck.pop());
+    const v = handValue(h.cards);
+    if (v > 21) h.status = 'bust'; else if (v === 21) h.status = 'stand';
+  } else h.status = 'stand';
+  if (!Object.values(bj.hands).some(x => x.status === 'playing')) bjSettle();
+  savePlay(); refresh();
+}
+function bjSettle() {
+  const bj = play.clue.bj;
+  const dealerBJ = isBlackjack(bj.dealer);
+  if (!dealerBJ && Object.values(bj.hands).some(h => h.status !== 'bust')) {
+    while (handValue(bj.dealer) < 17) bj.dealer.push(bj.deck.pop());
+  }
+  const dv = handValue(bj.dealer);
+  let won = false, lost = false;
+  for (const [pid, h] of Object.entries(bj.hands)) {
+    const v = handValue(h.cards);
+    let d;
+    if (h.status === 'blackjack') { d = dealerBJ ? 0 : Math.round(h.wager * 1.5); h.result = dealerBJ ? 'Push' : 'Blackjack!'; }
+    else if (h.status === 'bust') { d = -h.wager; h.result = 'Bust'; }
+    else if (dealerBJ) { d = -h.wager; h.result = 'Dealer blackjack'; }
+    else if (dv > 21 || v > dv) { d = h.wager; h.result = 'Win'; }
+    else if (v === dv) { d = 0; h.result = 'Push'; }
+    else { d = -h.wager; h.result = 'Lose'; }
+    h.delta = d;
+    if (d > 0) won = true; if (d < 0) lost = true;
+    adjust(pid, d);
+  }
+  bj.stage = 'done';
+  if (won || lost) celebrate(won && lost ? 'both' : won ? 'confetti' : 'skulls');
+}
+function bjLive(cl) {
+  const bj = cl.bj;
+  if (!bj) return null;
+  const hide = bj.stage === 'play';
+  const hands = {};
+  for (const [pid, h] of Object.entries(bj.hands)) hands[pid] = { wager: h.wager, cards: h.cards, value: handValue(h.cards), status: h.status, result: h.result || null, delta: h.delta ?? null };
+  return {
+    stage: bj.stage, wagers: bj.wagers, hands,
+    dealer: hide ? [bj.dealer[0], '??'] : bj.dealer, dealerValue: hide ? null : handValue(bj.dealer),
+  };
+}
+const cardHtml = c => c === '??' ? '<span class="card back"></span>'
+  : `<span class="card ${/[♥♦]/.test(c) ? 'red' : ''}">${esc(c)}</span>`;
+function bjHtml(b, players, { host = false, me: mine = null } = {}) {
+  if (!b) return '';
+  const head = `<div class="secret-name" style="color:#4cd964">🃏 Gamble Slop!</div>`;
+  if (b.stage === 'wager') {
+    const rows = players.map(p => {
+      const w = b.wagers[p.id], ok = p.score > 0;
+      const status = !ok ? 'Needs points to play' : w === undefined ? 'Deciding…' : w > 0 ? `Bets ${fmt(w)}` : 'Sitting out';
+      const control = host && ok ? `<input type="number" min="0" max="${p.score}" step="100" data-bjw="${p.id}" value="${w ?? ''}" placeholder="Bet" aria-label="${esc(p.name)} bet">`
+        : !host && p.id === mine && ok ? `<span class="row"><input id="bj-wager" type="number" min="1" max="${p.score}" step="100" placeholder="Bet" value="${w || ''}"><button class="primary" data-act="bj-join">Bet</button><button data-act="bj-sit">Sit out</button></span>` : '';
+      return `<div class="bj-row">${avatarSvg(p.av, 30)}<span class="bj-name">${nameHtml(p)} <small>${fmt(p.score)}</small></span><span class="bj-status">${status}</span>${control}</div>`;
+    }).join('');
+    return `${head}<p class="label">Wager some of your points to join the table, or sit out. Blackjack pays 3:2, the dealer stands on 17.</p>
+      <div class="bj-table">${rows}</div>${!host && me.bjErr ? `<div class="err">${esc(me.bjErr)}</div>` : ''}
+      ${host ? `<div class="actions"><button data-act="bj-skip">Skip the table</button><button class="primary" data-act="bj-deal">Deal cards →</button></div>` : ''}`;
+  }
+  const hands = players.filter(p => b.hands[p.id]).map(p => {
+    const h = b.hands[p.id];
+    const canAct = h.status === 'playing' && b.stage === 'play' && (host || p.id === mine);
+    const status = h.result ? `<b class="${h.delta > 0 ? 'win' : h.delta < 0 ? 'lose' : ''}">${esc(h.result)} ${h.delta ? fmt(h.delta) : ''}</b>`
+      : h.status === 'playing' ? (p.id === mine ? 'Your move' : 'Thinking…') : h.status === 'bust' ? 'Bust!' : h.status === 'blackjack' ? 'Blackjack!' : 'Stands';
+    return `<div class="bj-row ${p.id === mine ? 'mine' : ''}">${avatarSvg(p.av, 30)}<span class="bj-name">${nameHtml(p)} <small>bet ${fmt(h.wager)}</small></span>
+      <span class="cards">${h.cards.map(cardHtml).join('')}<span class="bj-val">${h.value}</span></span><span class="bj-status">${status}</span>
+      ${canAct ? `<span class="row"><button class="primary" data-act="bj-hit" data-p="${p.id}">Hit</button><button data-act="bj-stand" data-p="${p.id}">Stand</button></span>` : ''}</div>`;
+  }).join('');
+  return `${head}
+    <div class="bj-row dealer"><span class="bj-name">🎩 Dealer</span><span class="cards">${b.dealer.map(cardHtml).join('')}${b.dealerValue != null ? `<span class="bj-val">${b.dealerValue}</span>` : ''}</span></div>
+    <div class="bj-table">${hands}</div>
+    ${host && b.stage === 'done' ? `<div class="actions"><button class="primary" data-act="bj-continue">Continue to the clue →</button></div>` : ''}
+    ${!host && b.stage === 'done' ? '<p class="label">The host will continue to the clue.</p>' : ''}`;
+}
+function sendBj(msg) {
+  try { pconn.send({ type: 'bj', token: live.clue.token, ...msg }); } catch { toast('That didn’t reach the host. Try again.'); }
+}
+
+// ---- What is.. Art? (players draw on their device; strokes travel as small point lists)
+const ART_MS = 30000, ART_W = 400, ART_H = 300;
+const ART_COLORS = ['#1f0d3f', '#ff4b4b', '#ffd23f', '#4cd964', '#3fa9ff', '#b77dff', '#8d5524', '#ffffff'];
+function cleanStrokes(x) {
+  if (!Array.isArray(x)) return [];
+  let budget = 8000;
+  const out = [];
+  for (const st of x.slice(0, 500)) {
+    if (!st || !Array.isArray(st.p) || budget <= 0) continue;
+    const pts = [];
+    for (let i = 0; i + 1 < st.p.length && budget > 0; i += 2, budget--) {
+      pts.push(Math.max(0, Math.min(ART_W, Math.round(+st.p[i] || 0))), Math.max(0, Math.min(ART_H, Math.round(+st.p[i + 1] || 0))));
+    }
+    if (pts.length >= 2) out.push({ c: ART_COLORS.includes(st.c) ? st.c : ART_COLORS[0], w: [4, 18].includes(st.w) ? st.w : 4, p: pts });
+  }
+  return out;
+}
+function artSvg(strokes) {
+  return `<svg class="art" viewBox="0 0 ${ART_W} ${ART_H}" aria-hidden="true"><rect width="${ART_W}" height="${ART_H}" fill="#fff"/>${(strokes || []).map(st =>
+    st.p.length === 2 ? `<circle cx="${st.p[0]}" cy="${st.p[1]}" r="${st.w / 2}" fill="${st.c}"/>`
+      : `<polyline points="${st.p.join(' ')}" fill="none" stroke="${st.c}" stroke-width="${st.w}" stroke-linecap="round" stroke-linejoin="round"/>`).join('')}</svg>`;
+}
+function artLive(cl) {
+  if (!cl.art) return null;
+  if (cl.stage === 'art') return { ms: cl.art.ms, submitted: Object.keys(cl.art.drawings) };
+  if (cl.stage === 'art-judge') return { drawings: cl.art.drawings, winner: cl.art.winner === undefined ? undefined : cl.art.winner };
+  return null;
+}
+function artGallery(players, drawings, winner, host) {
+  const who = players.filter(p => drawings[p.id]);
+  if (!who.length) return '<p class="label">No drawings came in.</p>';
+  return `<div class="gallery">${who.map(p => `<figure class="${winner === p.id ? 'win' : ''}">${artSvg(drawings[p.id])}
+    <figcaption>${avatarSvg(p.av, 24)}${nameHtml(p)}${winner === p.id ? ' 🏆' : ''}</figcaption>
+    ${host && winner === undefined ? `<button class="primary" data-act="art-pick" data-p="${p.id}">Best drawing</button>` : ''}</figure>`).join('')}</div>`;
+}
+function hostArtHtml(vc, C, clue) {
+  const a = vc.art, worth = clueWorth();
+  if (vc.stage === 'art') {
+    return `<div class="clue-card">${effectPill('art')}
+      <div class="clue-meta"><span>${esc(C.name)}</span><span>${fmt(worth)}</span></div>
+      <div class="clue-text">${esc(clue.q)}</div>
+      ${timerBar(a.endsAt, a.ms)}
+      <div class="answer" style="opacity:.8"><span class="tag">Correct response · only you can see this</span>${esc(clue.a) || '<em>(none entered)</em>'}</div>
+      <p class="label">Players are drawing the answer. ${Object.keys(a.drawings).length} drawing(s) in so far.</p>
+      <div class="actions"><button class="primary" data-act="art-end">End drawing now</button></div></div>`;
+  }
+  return `<div class="clue-card">${effectPill('art')}
+    <div class="answer"><span class="tag">Correct response</span>${esc(clue.a) || '<em>(none entered)</em>'}</div>
+    <p class="label">${a.winner === undefined ? `Pick the best drawing. The winner gets ${fmt(worth)}.` : a.winner ? '' : 'No winner this time.'}</p>
+    ${artGallery(play.players, a.drawings, a.winner, true)}
+    <div class="actions">${a.winner === undefined ? '<button data-act="art-none">No winner</button>' : '<button class="primary" data-act="art-close">Close clue</button>'}</div></div>`;
+}
+function playerArtHtml(L, c) {
+  if (c.stage === 'art-judge') {
+    const a = c.art || {};
+    return `<div class="clue-stage">${effectPill('art')}<div class="clue-text small">${esc(c.q)}</div>
+      ${c.revealed ? `<div class="answer">${esc(c.a || '')}</div>` : '<p class="label">The host is judging…</p>'}
+      ${artGallery(L.players, a.drawings || {}, a.winner, false)}</div>`;
+  }
+  const seen = (wheelSeen['art-' + c.token] ||= Date.now()), ms = c.art?.ms || ART_MS;
+  const n = c.art?.submitted?.length || 0;
+  if (me.watch || !L.players.some(p => p.id === me.pid)) {
+    return `<div class="clue-stage">${effectPill('art')}<div class="clue-text">${esc(c.q)}</div>${timerBar(seen + ms, ms)}<p class="label">Players are drawing the answer… ${n} drawing(s) in.</p></div>`;
+  }
+  if (me.art?.token !== c.token) me.art = { token: c.token, strokes: [], color: ART_COLORS[0], size: 4, sent: false };
+  clearTimeout(me.artTimer);
+  me.artTimer = setTimeout(() => { if (me.art?.token === c.token && !me.art.sent) { sendArt(); render(); } }, Math.max(0, seen + ms - Date.now()));
+  return `<div class="clue-stage art-stage">${effectPill('art')}
+    <div class="clue-text small">${esc(c.q)}</div>
+    ${timerBar(seen + ms, ms)}
+    <div class="art-pad"><canvas id="art-canvas" width="${ART_W * 2}" height="${ART_H * 2}" aria-label="Drawing canvas"></canvas></div>
+    <div class="art-tools">${ART_COLORS.map(col => `<button class="swatch ${me.art.color === col ? 'on' : ''}" style="background:${col}" data-act="art-color" data-c="${col}" title="${col === '#ffffff' ? 'Eraser' : 'Colour'}" aria-label="${col === '#ffffff' ? 'Eraser' : 'Colour'}"></button>`).join('')}
+      <button data-act="art-clear">Clear</button>
+      <button class="primary" data-act="art-send">${me.art.sent ? 'Sent ✓ · send again' : 'Send drawing'}</button></div>
+  </div>`;
+}
+function sendArt() {
+  if (!me.art || !pconn) return;
+  try { pconn.send({ type: 'art', token: me.art.token, strokes: me.art.strokes }); me.art.sent = true; } catch {}
+}
+function drawStrokes(ctx, strokes) {
+  ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, ART_W, ART_H);
+  ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+  for (const st of strokes) {
+    ctx.strokeStyle = st.c; ctx.fillStyle = st.c; ctx.lineWidth = st.w;
+    if (st.p.length === 2) { ctx.beginPath(); ctx.arc(st.p[0], st.p[1], st.w / 2, 0, 7); ctx.fill(); continue; }
+    ctx.beginPath(); ctx.moveTo(st.p[0], st.p[1]);
+    for (let i = 2; i < st.p.length; i += 2) ctx.lineTo(st.p[i], st.p[i + 1]);
+    ctx.stroke();
+  }
+}
+function mountArt() {
+  const cv = $('#art-canvas');
+  if (!cv || !me.art) return;
+  const ctx = cv.getContext('2d');
+  ctx.setTransform(2, 0, 0, 2, 0, 0);
+  drawStrokes(ctx, me.art.strokes);
+  let cur = null;
+  const at = e => { const r = cv.getBoundingClientRect(); return [Math.round((e.clientX - r.left) / r.width * ART_W), Math.round((e.clientY - r.top) / r.height * ART_H)]; };
+  cv.onpointerdown = e => {
+    e.preventDefault(); cv.setPointerCapture(e.pointerId);
+    me.drawing = true; cur = { c: me.art.color, w: me.art.size, p: at(e) };
+    me.art.strokes.push(cur); me.art.sent = false;
+    drawStrokes(ctx, me.art.strokes);
+  };
+  cv.onpointermove = e => {
+    if (!cur) return;
+    const [x, y] = at(e), n = cur.p.length;
+    if (Math.hypot(x - cur.p[n - 2], y - cur.p[n - 1]) < 2) return;
+    cur.p.push(x, y);
+    ctx.strokeStyle = cur.c; ctx.lineWidth = cur.w; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(cur.p[n - 2], cur.p[n - 1]); ctx.lineTo(x, y); ctx.stroke();
+  };
+  cv.onpointerup = cv.onpointercancel = () => {
+    cur = null; me.drawing = false;
+    if (needsRender) { needsRender = false; render(); }
+  };
+}
+
 // ---------- Actions ----------
 function goFinal() {
   const f = playGame().final;
@@ -1328,7 +1825,7 @@ function markUsed() {
 }
 function clueWorth() {
   const vc = play.clue;
-  return vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i];
+  return (vc.ddPlayer ? vc.wager : playGame().rounds[vc.r].values[vc.i]) * (vc.mult || 1);
 }
 function exportGame(g) {
   const { id, ...data } = g;
@@ -1430,7 +1927,63 @@ const actions = {
     const clue = playGame().rounds[play.round].categories[+d.c].clues[+d.i];
     const dd = !!clue.dd && S().dailyDoubles;
     play.clue = { token: uid(), r: play.round, c: +d.c, i: +d.i, dd, stage: dd ? 'dd' : 'clue', revealed: false, wrong: [], queue: [], open: !dd };
+    ensureSecrets();
+    const key = `${play.round}-${d.c}-${d.i}`;
+    if (!dd && S().secrets && play.secrets?.[key]) {
+      delete play.secrets[key];
+      Object.assign(play.clue, { stage: 'secret', open: false, secret: { effect: pickFrom(SECRETS).key, spinId: uid() } });
+      celebrate('secret');
+    }
     savePlay(); render();
+  },
+  // Secrets
+  'secret-go'() {
+    const vc = play.clue, clue = playGame().rounds[vc.r].categories[vc.c].clues[vc.i];
+    vc.effect = vc.secret.effect;
+    const toClue = () => { vc.stage = 'clue'; vc.open = true; };
+    if (vc.effect === 'double') { vc.mult = 2; toClue(); }
+    else if (vc.effect === 'robot') { vc.robot = true; toClue(); }
+    else if (vc.effect === 'ping') { vc.ping = { n: 1, total: clue.q.split(/\s+/).filter(Boolean).length, last: Date.now() }; toClue(); }
+    else if (vc.effect === 'yoda') { vc.yoda = yodaify(clue.q); toClue(); }
+    else if (vc.effect === 'art') { vc.stage = 'art'; vc.art = { ms: ART_MS, endsAt: Date.now() + ART_MS, drawings: {} }; }
+    else if (vc.effect === 'blackjack') { vc.stage = 'bj'; vc.bj = { stage: 'wager', wagers: {}, hands: {}, dealer: [], deck: [] }; }
+    savePlay(); render();
+  },
+  'bj-deal'() { bjDeal(); },
+  'bj-skip'() { const vc = play.clue; vc.stage = 'clue'; vc.open = true; savePlay(); render(); },
+  'bj-continue'() { const vc = play.clue; vc.stage = 'clue'; vc.open = true; savePlay(); render(); },
+  'bj-hit'(d) { if (role === 'host') bjAct(d.p, 'hit'); else sendBj({ action: 'hit' }); },
+  'bj-stand'(d) { if (role === 'host') bjAct(d.p, 'stand'); else sendBj({ action: 'stand' }); },
+  'bj-join'() {
+    const you = live?.players?.find(p => p.id === me.pid);
+    const w = parseInt($('#bj-wager')?.value);
+    if (!you || isNaN(w) || w < 1 || w > you.score) { me.bjErr = `Wager between $1 and ${fmt(you?.score || 0)}.`; return render(); }
+    me.bjErr = ''; sendBj({ action: 'wager', w });
+  },
+  'bj-sit'() { me.bjErr = ''; sendBj({ action: 'wager', w: 0 }); },
+  'art-end'() { const vc = play.clue; vc.stage = 'art-judge'; savePlay(); render(); },
+  'art-pick'(d) {
+    const vc = play.clue;
+    if (vc.art.winner !== undefined) return;
+    vc.art.winner = d.p; vc.revealed = true;
+    adjust(d.p, clueWorth()); celebrate('confetti');
+    savePlay(); render();
+  },
+  'art-none'() { const vc = play.clue; vc.art.winner = null; vc.revealed = true; celebrate('skulls'); savePlay(); render(); },
+  'art-close'() { markUsed(); },
+  'art-color'(d) { me.art.color = d.c; me.art.size = d.c === '#ffffff' ? 18 : 4; render(); },
+  'art-clear'() { me.art.strokes = []; me.art.sent = false; render(); },
+  'art-send'() { sendArt(); render(); },
+  'cap-toggle'(d) {
+    const cap = me.captcha, i = +d.i;
+    cap.sel = cap.sel.includes(i) ? cap.sel.filter(x => x !== i) : [...cap.sel, i];
+    render();
+  },
+  'cap-verify'() {
+    const cap = me.captcha;
+    const want = cap.cells.map((e, i) => e === cap.target ? i : -1).filter(i => i >= 0);
+    if (want.length === cap.sel.length && want.every(i => cap.sel.includes(i))) { me.capPassed = cap.token; actions.buzz(); }
+    else { toast(pickFrom(["Hmm. That's exactly what a robot would pick.", 'Beep boop? Try again.', 'Suspiciously robotic. Try again.'])); me.captcha = newCaptcha(cap.token); render(); }
   },
   'dd-pick'(d) { play.clue.ddPlayer = d.p; play.clue.err = ''; savePlay(); render(); },
   'dd-go'() {
@@ -1567,6 +2120,7 @@ const actions = {
   buzz() {
     const c = live?.clue;
     if (!c || buzzState().off) return;
+    if (c.robot && me.capPassed !== c.token) return; // "Are you a robot?": the captcha has to be solved first
     me.buzzToken = c.token;
     buzzSound(!c.queue.length);
     try { pconn.send({ type: 'buzz', token: c.token }); } catch { toast('Your buzz didn’t go through. Try again.'); me.buzzToken = null; }
@@ -1612,6 +2166,9 @@ function onField(e) {
     touch();
   } else if ('pname' in d && view.name === 'setup') {
     view.players[+d.pname] = el.value;
+  } else if (d.bjw && play?.clue?.bj && e.type === 'change') {
+    const v = parseInt(el.value);
+    bjSetWager(d.bjw, isNaN(v) ? 0 : v); savePlay(); refresh();
   } else if ('ddwager' in d && play?.clue) {
     play.clue.wager = el.value;
   } else if (d.fwager && play?.final) {
@@ -1631,6 +2188,7 @@ document.addEventListener('keydown', e => {
   if (role === 'player') {
     if (e.key === 'Enter' && (e.target.id === 'join-name' || e.target.id === 'join-code')) { e.preventDefault(); joinAs(false); }
     else if (e.key === 'Enter' && e.target.id === 'fw-input') { e.preventDefault(); actions['p-wager'](); }
+    else if (e.key === 'Enter' && e.target.id === 'bj-wager') { e.preventDefault(); actions['bj-join'](); }
     else if (!typing && (e.key === ' ' || e.key === 'Enter') && me.joined && !me.watch) { e.preventDefault(); actions.buzz(); }
     return;
   }
@@ -1639,7 +2197,7 @@ document.addEventListener('keydown', e => {
     if (e.key === 'Enter' && typing && 'ddwager' in e.target.dataset) { e.preventDefault(); actions['dd-go'](); return; }
     if (typing) return;
     if (e.key === ' ' && vc.stage === 'clue' && !vc.revealed) { e.preventDefault(); actions.reveal(); }
-    else if (e.key === 'Escape' && !vc.ddPlayer) actions['clue-cancel']();
+    else if (e.key === 'Escape' && !vc.ddPlayer && vc.stage === 'clue' && !vc.effect) actions['clue-cancel']();
   } else if (view.name === 'final' && !typing && e.key === ' ' && play?.final?.stage === 'clue') {
     e.preventDefault(); actions['f-reveal']();
   }
@@ -1769,6 +2327,18 @@ function onHostMsg(rec, m) {
     if (isNaN(n) || n < 0 || n > pl.score) return;
     F.wagers[rec.pid] = n; F.submitted[rec.pid] = true;
     savePlay(); refresh();
+  } else if (m.type === 'bj') {
+    const cl = play?.clue;
+    if (rec.role !== 'player' || !cl?.bj || m.token !== cl.token) return;
+    if (m.action === 'wager') { bjSetWager(rec.pid, parseInt(m.w) || 0); savePlay(); refresh(); }
+    else if (m.action === 'hit' || m.action === 'stand') bjAct(rec.pid, m.action);
+  } else if (m.type === 'art') {
+    const cl = play?.clue;
+    if (rec.role !== 'player' || !cl?.art || m.token !== cl.token || !player(rec.pid)) return;
+    const late = cl.stage === 'art-judge' && (cl.art.drawings[rec.pid] || Date.now() > cl.art.endsAt + 6000);
+    if (cl.stage !== 'art' && (cl.stage !== 'art-judge' || late)) return;
+    cl.art.drawings[rec.pid] = cleanStrokes(m.strokes);
+    savePlay(); refresh();
   }
 }
 function refreshPeers() {
@@ -1885,7 +2455,7 @@ let lastToken = null, lastQueueLen = 0, lastFxId; // lastFxId stays undefined un
 function onLive(state) {
   live = state;
   const fx = live?.fx;
-  if (fx && fx.id !== lastFxId && lastFxId !== undefined && ['confetti', 'skulls', 'both'].includes(fx.kind)) playFx(fx.kind);
+  if (fx && fx.id !== lastFxId && lastFxId !== undefined && ['confetti', 'skulls', 'both', 'secret'].includes(fx.kind)) playFx(fx.kind);
   lastFxId = fx?.id ?? null;
   const tok = live?.clue?.token || null, qLen = live?.clue?.queue?.length || 0;
   if (tok && me.buzzToken && tok !== me.buzzToken) me.buzzToken = null;
@@ -1893,7 +2463,10 @@ function onLive(state) {
   if (me.watch && tok && tok === lastToken && qLen > lastQueueLen) buzzSound(lastQueueLen === 0);
   lastToken = tok; lastQueueLen = qLen;
   if (live?.final?.token && me.fwSent && me.fwSent.token !== live.final.token) me.fwSent = null;
-  if (typingInApp() && !(document.activeElement?.id === 'fw-input' && live?.final?.stage !== 'wager')) needsRender = true;
+  // Drawing time's up: hand in whatever is on the canvas.
+  if (live?.clue?.stage === 'art-judge' && me.art?.token === live.clue.token && !me.art.sent && me.art.strokes.length) sendArt();
+  if (me.drawing) needsRender = true;
+  else if (typingInApp() && !(document.activeElement?.id === 'fw-input' && live?.final?.stage !== 'wager')) needsRender = true;
   else render();
 }
 
