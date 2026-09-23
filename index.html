@@ -280,7 +280,7 @@
   .av-preview { display: flex; flex-direction: column; align-items: center; gap: 4px; margin-bottom: 6px; }
   .av-name { font-family: var(--display); font-size: 24px; letter-spacing: .03em; text-shadow: 2px 2px 0 #000; overflow-wrap: anywhere; text-align: center; }
   .av-opts { display: flex; flex-wrap: wrap; gap: 6px; }
-  .av-opt { padding: 3px; border-radius: 10px; background: rgba(0, 0, 0, .25); line-height: 0; border: 2px solid transparent; }
+  .av-opt { padding: 2px; border-radius: 10px; background: rgba(0, 0, 0, .25); line-height: 0; border: 2px solid transparent; }
   .av-opt.on { border-color: var(--accent); background: var(--board-dk); }
   .swatch { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 2px solid rgba(255, 255, 255, .25); }
   .swatch.on { outline: 3px solid var(--accent); outline-offset: 2px; border-color: #fff; }
@@ -378,16 +378,19 @@ const me = {
 lsSet('jeoparty.pid', me.pid);
 
 // ---------- Avatars ----------
-// Players pick a hairstyle, one accessory, a skin tone and a name colour (the shirt matches the name).
-// The host only accepts values from these lists, so nothing a player sends ends up in the page as-is.
+// Players pick a hairstyle, hair colour, one accessory, a skin tone and a name colour (the shirt matches
+// the name). Every face is deliberately derpy. The host only accepts values from these lists, so nothing
+// a player sends ends up in the page as-is.
 const AV = {
-  hair: ['short', 'long', 'spiky', 'curly', 'bun', 'mohawk', 'none'],
+  hair: ['short', 'long', 'spiky', 'curly', 'bun', 'mohawk', 'bowl', 'clown', 'none'],
+  hairColor: ['#3b2417', '#17111f', '#f2d16b', '#d2602e', '#b9b9c6', '#ff7ac8', '#5fe07a', '#4aa8ff', '#9b6bff'],
   acc: ['none', 'glasses', 'sunglasses', 'partyhat', 'crown', 'headphones', 'bow', 'mustache'],
   skin: ['#f9dcc4', '#f1c27d', '#e0ac69', '#c68642', '#8d5524', '#5c3a21'],
   color: ['#ffffff', '#ffa8d8', '#c9a8ff', '#7fd4ff', '#8ff0bd', '#ffe37a', '#ffb27a', '#ff8f93'],
 };
 const AV_LABEL = {
-  hair: { short: 'Short', long: 'Long', spiky: 'Spiky', curly: 'Curly', bun: 'Bun', mohawk: 'Mohawk', none: 'Bald' },
+  hair: { short: 'Cowlick', long: 'Long', spiky: 'Spiky', curly: 'Curly', bun: 'Bun', mohawk: 'Mohawk', bowl: 'Bowl cut', clown: 'Clown', none: 'Bald' },
+  hairColor: ['Brown', 'Black', 'Blonde', 'Ginger', 'Grey', 'Pink', 'Green', 'Blue', 'Purple'],
   acc: { none: 'None', glasses: 'Glasses', sunglasses: 'Sunglasses', partyhat: 'Party hat', crown: 'Crown', headphones: 'Headphones', bow: 'Bow', mustache: 'Mustache' },
 };
 const pickFrom = list => list[Math.floor(Math.random() * list.length)];
@@ -395,46 +398,57 @@ function cleanAv(a) {
   a = a && typeof a === 'object' ? a : {};
   return {
     hair: AV.hair.includes(a.hair) ? a.hair : 'short',
+    hairColor: AV.hairColor.includes(a.hairColor) ? a.hairColor : '#3b2417',
     acc: AV.acc.includes(a.acc) ? a.acc : 'none',
     skin: AV.skin.includes(a.skin) ? a.skin : '#e0ac69',
     color: AV.color.includes(a.color) ? a.color : '#ffffff',
   };
 }
 function avatarSvg(av, size = 36) {
-  const a = cleanAv(av), H = '#3b2417', ink = '#1f0d3f';
+  const a = cleanAv(av), H = a.hairColor, ink = '#1f0d3f';
   const back = {
-    long: `<path d="M7.5 35 L7.5 19 Q7.5 6.5 20 6.5 Q32.5 6.5 32.5 19 L32.5 35 Z" fill="${H}"/>`,
-    bun: `<circle cx="20" cy="6.5" r="4.6" fill="${H}"/>`,
+    long: `<path d="M7 36 L7 19 Q7 6 20 6 Q33 6 33 19 L33 36 Z" fill="${H}"/>`,
+    bun: `<circle cx="20" cy="5.5" r="5" fill="${H}"/>`,
+    clown: `<g fill="${H}"><circle cx="7.5" cy="15.5" r="4.6"/><circle cx="5.8" cy="22" r="4.2"/><circle cx="32.5" cy="15.5" r="4.6"/><circle cx="34.2" cy="22" r="4.2"/></g>`,
   }[a.hair] || '';
   const front = {
-    short: `<path d="M9 21 Q8.5 8.5 20 8.5 Q31.5 8.5 31 21 Q28 14.5 20 14 Q12 14.5 9 21Z" fill="${H}"/>`,
-    long: `<path d="M9 21 Q8.5 8.5 20 8.5 Q31.5 8.5 31 21 Q27 13 20 13.5 Q13 13 9 21Z" fill="${H}"/>`,
-    spiky: `<path d="M9 21 L9.5 12 L13 15 L14.5 7.5 L18 12.5 L20 5.5 L22 12.5 L25.5 7.5 L27 15 L30.5 12 L31 21 Q27 15 20 15 Q13 15 9 21Z" fill="${H}"/>`,
-    curly: `<g fill="${H}"><circle cx="11" cy="17" r="4"/><circle cx="13.5" cy="12" r="4.2"/><circle cx="20" cy="10" r="4.5"/><circle cx="26.5" cy="12" r="4.2"/><circle cx="29" cy="17" r="4"/></g>`,
-    bun: `<path d="M9 21 Q8.5 9 20 9 Q31.5 9 31 21 Q28 14 20 14 Q12 14 9 21Z" fill="${H}"/>`,
-    mohawk: `<path d="M17.5 4 Q20 2.5 22.5 4 L22 14 L18 14 Z" fill="${H}"/>`,
+    short: `<path d="M8.8 20 Q8.5 8.5 20 8.5 Q31.5 8.5 31.2 20 Q28 13.5 20 13.5 Q12 13.5 8.8 20Z" fill="${H}"/><path d="M19.5 9 Q20 3 24.5 3.5 Q27 4.2 25.5 6.5" fill="none" stroke="${H}" stroke-width="1.8" stroke-linecap="round"/>`,
+    long: `<path d="M8.8 20 Q8.5 8 20 8 Q31.5 8 31.2 20 Q27 12.5 20 13 Q13 12.5 8.8 20Z" fill="${H}"/>`,
+    spiky: `<path d="M8.8 20 L7.5 10 L12.5 14 L12 4.5 L17 11.5 L19.5 1.5 L22.5 11.5 L27.5 3.5 L27.5 14 L33 9 L31.2 20 Q27 14.5 20 14.5 Q13 14.5 8.8 20Z" fill="${H}"/>`,
+    curly: `<g fill="${H}"><circle cx="10.5" cy="16.5" r="4.2"/><circle cx="13" cy="11" r="4.5"/><circle cx="20" cy="8.5" r="5"/><circle cx="27" cy="11" r="4.5"/><circle cx="29.5" cy="16.5" r="4.2"/></g>`,
+    bun: `<path d="M8.8 20 Q8.5 9 20 9 Q31.5 9 31.2 20 Q28 13.5 20 13.5 Q12 13.5 8.8 20Z" fill="${H}"/>`,
+    mohawk: `<path d="M17 1 Q20 -2.5 23 1 L22.2 13.5 L17.8 13.5 Z" fill="${H}"/>`,
+    bowl: `<path d="M7.8 23 Q7.8 7 20 7 Q32.2 7 32.2 23 L29.5 23 L29.5 18 L10.5 18 L10.5 23 Z" fill="${H}"/>`,
   }[a.hair] || '';
   const acc = {
-    glasses: `<g fill="none" stroke="${ink}" stroke-width="1.2"><circle cx="15.8" cy="22" r="3"/><circle cx="24.2" cy="22" r="3"/><path d="M18.8 22 H21.2"/></g>`,
-    sunglasses: `<g fill="${ink}"><rect x="12" y="19.8" width="7" height="4.4" rx="1.8"/><rect x="21" y="19.8" width="7" height="4.4" rx="1.8"/><rect x="18.5" y="21" width="3" height="1"/></g>`,
-    partyhat: `<path d="M13 12 L20 -1 L27 12 Z" fill="#ffa8d8"/><path d="M15.2 8 H24.8 M17.3 4 H22.7" stroke="#7fd4ff" stroke-width="1.4"/><circle cx="20" cy="-1" r="1.8" fill="#ffe37a"/>`,
-    crown: `<path d="M12 12 L12 4.5 L16 8 L20 3 L24 8 L28 4.5 L28 12 Z" fill="#ffd34d" stroke="#b8860b" stroke-width=".6"/>`,
-    headphones: `<path d="M8.5 22 Q8.5 7 20 7 Q31.5 7 31.5 22" fill="none" stroke="#ddd0fa" stroke-width="2"/><rect x="6.5" y="19" width="4" height="7" rx="1.5" fill="#ff8f93"/><rect x="29.5" y="19" width="4" height="7" rx="1.5" fill="#ff8f93"/>`,
-    bow: `<g fill="#ff5fa8"><path d="M25 11 L30.5 7.5 L30.5 14.5 Z"/><path d="M25 11 L19.5 7.5 L19.5 14.5 Z"/><circle cx="25" cy="11" r="1.7"/></g>`,
-    mustache: `<path d="M15.5 26.2 Q18 24.5 20 26 Q22 24.5 24.5 26.2 Q22 27.6 20 26.8 Q18 27.6 15.5 26.2Z" fill="${H}"/>`,
+    glasses: `<g fill="none" stroke="${ink}" stroke-width="1.2"><circle cx="15" cy="19.5" r="4.4"/><circle cx="25.5" cy="20.5" r="3.6"/><path d="M19.4 19.8 L21.9 20.3"/></g>`,
+    sunglasses: `<g fill="${ink}"><rect x="10.2" y="16.6" width="9.4" height="5.8" rx="2.2"/><rect x="21.6" y="17.8" width="8" height="5.2" rx="2.2"/><path d="M19.5 19 L21.8 19.8" stroke="${ink}" stroke-width="1.2"/></g><path d="M11.5 18 L13.5 17.6" stroke="#fff" stroke-width=".8" stroke-linecap="round" opacity=".7"/>`,
+    partyhat: `<g transform="rotate(-14 20 8)"><path d="M13 12 L20 -1 L27 12 Z" fill="#ffa8d8"/><path d="M15.2 8 H24.8 M17.3 4 H22.7" stroke="#7fd4ff" stroke-width="1.4"/><circle cx="20" cy="-1" r="1.8" fill="#ffe37a"/></g>`,
+    crown: `<path d="M11 11.5 L10.5 3.5 L15.5 7.5 L19.5 1.5 L24 7 L29.5 2.5 L29 11.5 Z" fill="#ffd34d" stroke="#b8860b" stroke-width=".6" transform="rotate(8 20 8)"/>`,
+    headphones: `<path d="M8 21 Q8 6.5 20 6.5 Q32 6.5 32 21" fill="none" stroke="#ddd0fa" stroke-width="2"/><rect x="5" y="18" width="5" height="8" rx="2" fill="#ff8f93"/><rect x="30" y="18" width="5" height="8" rx="2" fill="#ff8f93"/>`,
+    bow: `<g fill="#ff5fa8"><path d="M26 10.5 L32 6.5 L32 14.5 Z"/><path d="M26 10.5 L20 6.5 L20 14.5 Z"/><circle cx="26" cy="10.5" r="1.8"/></g>`,
+    mustache: `<path d="M14.8 26.6 Q17.8 24.4 20.5 26 Q23.2 24.4 26.2 26.6 Q27.5 28 26.8 28.6 Q24 26.6 20.5 27.4 Q17 26.6 14.2 28.6 Q13.5 28 14.8 26.6Z" fill="${H}"/>`,
   }[a.acc] || '';
+  // The derp: sticky-out ears, googly cross-eyes of two sizes, wonky brows, blob nose,
+  // and a lopsided open grin with buck teeth and a tongue.
   return `<svg class="av" width="${size}" height="${size}" viewBox="0 -4 40 44" aria-hidden="true">
     <path d="M4.5 40 Q5.5 30.5 20 30.5 Q34.5 30.5 35.5 40 Z" fill="${a.color}"/>${back}
-    <circle cx="20" cy="21" r="11" fill="${a.skin}"/>
-    <circle cx="16.2" cy="22" r="1.3" fill="${ink}"/><circle cx="23.8" cy="22" r="1.3" fill="${ink}"/>
-    <path d="M16.5 26 Q20 29 23.5 26" stroke="${ink}" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+    <ellipse cx="8.4" cy="22" rx="2.8" ry="3.8" fill="${a.skin}"/><ellipse cx="31.8" cy="21" rx="2.4" ry="3.3" fill="${a.skin}"/>
+    <ellipse cx="20" cy="21" rx="11.5" ry="10.6" fill="${a.skin}"/>
+    <circle cx="15" cy="19.5" r="3.8" fill="#fff" stroke="${ink}" stroke-width=".6"/><circle cx="25.5" cy="20.5" r="2.9" fill="#fff" stroke="${ink}" stroke-width=".6"/>
+    <circle cx="16.6" cy="20.7" r="1.6" fill="${ink}"/><circle cx="24.3" cy="19.6" r="1.25" fill="${ink}"/>
+    <path d="M11.2 14.2 L18.2 12.8" stroke="${ink}" stroke-width="1.3" stroke-linecap="round"/><path d="M22.8 16.8 L28.4 18" stroke="${ink}" stroke-width="1.3" stroke-linecap="round"/>
+    <ellipse cx="20.6" cy="24.2" rx="2.5" ry="1.9" fill="rgba(120,30,40,.3)"/>
+    <path d="M14.6 27.2 Q20 33.4 26.4 26.4 Q20.5 29.2 14.6 27.2Z" fill="${ink}"/>
+    <rect x="18.2" y="27.7" width="1.9" height="2.3" rx=".4" fill="#fff"/><rect x="20.3" y="27.6" width="1.9" height="2.5" rx=".4" fill="#fff"/>
+    <ellipse cx="23" cy="29.4" rx="1.8" ry="1.1" fill="#ff6b8a"/>
     ${front}${acc}</svg>`;
 }
 // A player's name in their chosen colour (players added by the host without a device stay white).
 const nameHtml = p => `<span class="pn" style="color:${cleanAv(p?.av).color}">${esc(p?.name)}</span>`;
 
 // This device's avatar: remembered, or a random starting look the first time.
-me.av = cleanAv(lsGet('jeoparty.avatar', null) || { hair: pickFrom(AV.hair.slice(0, 6)), acc: 'none', skin: pickFrom(AV.skin), color: pickFrom(AV.color) });
+me.av = cleanAv(lsGet('jeoparty.avatar', null) || { hair: pickFrom(AV.hair.slice(0, 8)), hairColor: pickFrom(AV.hairColor), acc: 'none', skin: pickFrom(AV.skin), color: pickFrom(AV.color) });
 lsSet('jeoparty.avatar', me.av);
 
 // ---------- Model ----------
@@ -1061,9 +1075,11 @@ function renderPlayer() {
         <div class="av-editor">
           <div class="av-preview">${avatarSvg(me.av, 112)}<div class="av-name" id="av-name" style="color:${me.av.color}">${esc(me.name) || 'Your name'}</div></div>
           <p class="label">Hairstyle</p>
-          <div class="av-opts">${AV.hair.map(h => opt('hair', h, avatarSvg({ ...me.av, hair: h, acc: 'none' }, 38), AV_LABEL.hair[h])).join('')}</div>
+          <div class="av-opts">${AV.hair.map(h => opt('hair', h, avatarSvg({ ...me.av, hair: h, acc: 'none' }, 31), AV_LABEL.hair[h])).join('')}</div>
+          <p class="label">Hair colour</p>
+          <div class="av-opts">${AV.hairColor.map((c, i) => swatch('hairColor', c, `${AV_LABEL.hairColor[i]} hair`)).join('')}</div>
           <p class="label">Accessory</p>
-          <div class="av-opts">${AV.acc.map(x => opt('acc', x, avatarSvg({ ...me.av, acc: x }, 38), AV_LABEL.acc[x])).join('')}</div>
+          <div class="av-opts">${AV.acc.map(x => opt('acc', x, avatarSvg({ ...me.av, acc: x }, 31), AV_LABEL.acc[x])).join('')}</div>
           <p class="label">Skin tone</p>
           <div class="av-opts">${AV.skin.map((c, i) => swatch('skin', c, `Skin tone ${i + 1}`)).join('')}</div>
           <p class="label">Name colour</p>
