@@ -26,6 +26,7 @@
     --serif: 'Libre Baskerville', Georgia, 'Times New Roman', serif;
   }
   * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
   html, body { height: 100%; }
   body {
     margin: 0; background: var(--bg); color: var(--text);
@@ -279,8 +280,37 @@
 <div id="toast" hidden></div>
 <input type="file" id="file" accept=".json,application/json" hidden>
 
-<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+// If anything goes wrong while starting up, show it instead of leaving a blank page.
+function showFatal(msg) {
+  const app = document.getElementById('app');
+  if (!app || app.dataset.ready) return;
+  app.innerHTML = `<div class="wait"><h1 class="logo big">2MixParty!</h1>
+    <p>Something went wrong while starting the game.</p>
+    <p class="muted" style="font-family:monospace;max-width:640px;overflow-wrap:anywhere"></p>
+    <div class="row" style="justify-content:center">
+      <button onclick="location.reload()">Reload</button>
+      <button onclick="try{localStorage.removeItem('jeoparty.play')}catch{};location.reload()">Clear the game in progress and reload</button>
+    </div>
+    <p class="hint">Your saved games are kept either way.</p></div>`;
+  app.querySelector('.muted').textContent = String(msg || 'Unknown error');
+}
+window.addEventListener('error', e => showFatal(e.message));
+
+// PeerJS (online play) and the QR code library load in the background, so the page never waits on them.
+function loadScript(src, ms = 15000) {
+  return new Promise(resolve => {
+    const s = document.createElement('script');
+    const t = setTimeout(() => resolve(false), ms);
+    s.src = src; s.async = true;
+    s.onload = () => { clearTimeout(t); resolve(true); };
+    s.onerror = () => { clearTimeout(t); resolve(false); };
+    document.head.appendChild(s);
+  });
+}
+const peerReady = loadScript('https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.4/peerjs.min.js');
+loadScript('https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js');
+</script>
 <script>
 const $ = s => document.querySelector(s);
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -585,6 +615,7 @@ function render() {
   else if (view.name === 'final') app.innerHTML = playGame() && play.final ? renderFinal() : renderHome();
   renderOverlay();
   publishLive();
+  app.dataset.ready = '1';
 }
 // Re-render now, or later if the viewer is typing (a render would steal their focus).
 function refresh() {
@@ -1387,8 +1418,10 @@ function openPlayerPeer() {
 }
 let playerPeer = null;
 async function connectPlayer() {
-  if (pConnecting || !window.Peer) { if (!window.Peer) { pstate = 'lost'; render(); } return; }
+  if (pConnecting) return;
   pConnecting = true;
+  await peerReady;
+  if (!window.Peer) { pConnecting = false; pstate = 'lost'; refresh(); scheduleRetry(); return; }
   clearTimeout(retryTimer);
   const old = pconn; pconn = null;
   try { old?.close(); } catch {}
@@ -1452,7 +1485,7 @@ if (role === 'host') {
   if (play && !gameById(play.gameId)) play = null;
   if (play) view = { name: play.final ? 'final' : 'board' }; // a reload mid-game goes straight back to it
   render();
-  startHost();
+  peerReady.then(() => startHost());
 } else {
   if (me.code.length === 4 && (me.name || me.watch) && params.get('join')) { me.joined = true; connectPlayer(); }
   render();
